@@ -5,7 +5,7 @@ import path from "path"
 import __dirname from '../utils.js'
 
 const cartsRouter = Router()
-const pathCart = "./data/carrito.json"
+const pathCart = "../dao/data/carrito.json"
 
 //rutas de carrito
 cartsRouter.post("/", (req, res) => {
