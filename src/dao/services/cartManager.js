@@ -20,12 +20,12 @@ export default class CartManager {
         let product = cart.products.find((product) => product.product.toString() === pid)
 
         if (product) {
-            product.quantity += quantity;
+            product.quantity += quantity
         } else {
-            cart.products.push({ product: pid, quantity });
+            cart.products.push({ product: pid, quantity })
         }
 
-        return await cart.save();
+        return await cart.save()
     }
 
     deleteProduct = async (cid, pid) => {
@@ -38,6 +38,6 @@ export default class CartManager {
             cart.product.splice(product,1)
         }
 
-        return await cart.save();
+        return await cart.save()
     }
 }

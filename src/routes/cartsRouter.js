@@ -45,7 +45,7 @@ cartsRouter.get("/:cid/", (req, res) => {
 
     // Verificar si se encontró el carrito
     if (!finalCart) {
-        return res.status(404).json({ error: "Carrito no encontrado" });
+        return res.status(404).json({ error: "Carrito no encontrado" })
     }
     let data = JSON.stringify(finalCart)
 

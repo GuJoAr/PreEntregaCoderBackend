@@ -3,8 +3,7 @@ import __dirname from './utils.js'
 import handlebars from 'express-handlebars'
 import { Server } from 'socket.io'
 import mongoose from 'mongoose'
-import productRouter from "./routes/productsRouter.js"
-// import cartsRouter from './routes/cartsRouter.js'
+import router from "./routes.js"
 
 const app = express()
 const PORT = process.env.PORT || 8080
@@ -16,11 +15,10 @@ app.use(express.urlencoded({extended: true}))
 app.use(express.json())
 app.use(express.static(__dirname+'/public'))
 app.engine('handlebars', handlebars.engine())
+// app.use(bodyParser.json())
 
-
-//Routes
-app.use("/api/products", productRouter)
-// app.use("/api/carts", cartsRouter)
+//Route
+app.use("/api/", router)
 
 const connectMongoDB = async () => {
     const DB_URL = 'mongodb://127.0.0.1:27017/ecommerce?retryWrites=true&w=majority'
@@ -36,3 +34,22 @@ connectMongoDB()
 
 const server = app.listen(PORT,()=>console.log("Servidor conectado al puerto: ", PORT))
 const io = new Server(server)
+
+io.on('connection', socket => {
+    console.log("Nuevo cliente conectado!!")
+
+    socket.on("deleteProduct", (deleteProductId) => {
+        console.log("Producto borrado:", deleteProductId)
+        io.emit("deleteProduct", deleteProductId)
+    })
+
+    socket.on("addProduct", (addProduct) => {
+        console.log("Producto agregado:", addProduct)
+        io.emit("addProduct", addProduct)
+    })
+
+    socket.on("addMessage", (addMessage) => {
+        console.log("Mensaje agregado", addMessage)
+        io.emit("addMessage", addMessage)
+    })
+})
