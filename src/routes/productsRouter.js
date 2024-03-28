@@ -1,48 +1,19 @@
-import ProductManager from "../dao/services/productManager.js"
 import express from "express"
+import productController from "../dao/services/productController.js";
 
-const productManager = new ProductManager()
-const productsRouter = express.Router()
-// const pathProducts = "../dao/data/productos.json"
+const productRouter = express.Router();
 
-// ruta para obtener todos los productos
-productsRouter.get("/all", (req, res) => {
-    const limit = req.query.limit
-    const products = productManager.getAll(limit)
-    res.json(products)
-})
+// Ruta para renderizar la vista de productos en tiempo real
+productRouter.get("/realtimeproducts", productController.getProducts);
 
-// ruta para agregar un nuevo producto
-productsRouter.post("/add", (req, res) => {
-    const newProduct = req.body
-    const result = productManager.addProduct(newProduct)
-    res.json(result)
-})
 
-// ruta para obtener un producto por su ID
-productsRouter.get("/:pid", (req, res) => {
-    const productId = parseInt(req.params.pid)
-    const product = productManager.getProductById(productId)
-    if (product) {
-        res.json(product)
-    } else {
-        res.status(404).send("Producto no encontrado")
-    }
-})
+// Maneja la solicitud de para ver los detalles del producto
+productRouter.get("/:id", productController.getProductDetail);
 
-// ruta para actualizar un producto por su ID
-productsRouter.put("/:pid", (req, res) => {
-    const productId = parseInt(req.params.pid)
-    const updatedProductData = req.body
-    const result = productManager.updateProduct(productId, updatedProductData)
-    res.json(result)
-})
+// Manejar la solicitud de agregar un producto en tiempo real
+productRouter.post("/addProduct", productController.addProduct);
 
-// ruta para eliminar un producto por su ID
-productsRouter.delete("/:pid", (req, res) => {
-    const productId = parseInt(req.params.pid)
-    const result = productManager.deleteProduct(productId)
-    res.json(result)
-})
+// Manejar la solicitud de eliminación de un producto en tiempo real
+productRouter.delete('/deleteProduct/:id', productController.deleteProduct);
 
-export default productsRouter
+export default productRouter;
