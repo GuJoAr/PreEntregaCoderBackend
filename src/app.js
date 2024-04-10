@@ -3,10 +3,16 @@ import __dirname from './utils.js'
 import handlebars from 'express-handlebars'
 import { Server } from 'socket.io'
 import mongoose from 'mongoose'
+import bodyParser from "body-parser"
 import router from "./routes.js"
+import session from "express-session"
+import FileStore from "session-file-store"
+import cookieParser from "cookie-parser"
+import MongoStore from "connect-mongo"
 
 const app = express()
 const PORT = process.env.PORT || 8080
+const fileStore = FileStore(session)
 
 //Middlewares
 app.set('views',__dirname+'/views')
@@ -15,22 +21,36 @@ app.use(express.urlencoded({extended: true}))
 app.use(express.json())
 app.use(express.static(__dirname+'/public'))
 app.engine('handlebars', handlebars.engine())
-// app.use(bodyParser.json())
+app.use(bodyParser.json())
+app.use(cookieParser())
 
 //Route
 app.use("/api/", router)
 
-const connectMongoDB = async () => {
-    const DB_URL = 'mongodb://127.0.0.1:27017/ecommerce?retryWrites=true&w=majority'
-    try{
-        await mongoose.connect(DB_URL)
-        console.log("Conectado con MongoDB")
-    }catch(error){
-        console.error("No se pudo conectar a la DB", error)
-        process.exit()
-    }
-}
-connectMongoDB()
+app.use(session({
+    store: MongoStore.create({
+        mongoUrl: `mongodb://127.0.0.1:27017/ecommerce?retryWrites=true&w=majority`,
+        ttl: 360,
+    }),
+    secret: "secret_key",
+    resave: false,
+    saveUninitialized: false,
+}))
+
+mongoose.connect(`mongodb://127.0.0.1:27017/ecommerce?retryWrites=true&w=majority`, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+
+const db = mongoose.connection
+
+db.on("error", (error) => {
+    console.error("No se pudo conectar a la DB:", error)
+})
+
+db.once("open", () => {
+    console.log("Conectado con MongoDB")
+})
 
 const server = app.listen(PORT,()=>console.log("Servidor conectado al puerto: ", PORT))
 const io = new Server(server)
@@ -51,5 +71,15 @@ io.on('connection', socket => {
     socket.on("addMessage", (addMessage) => {
         console.log("Mensaje agregado", addMessage)
         io.emit("addMessage", addMessage)
+    })
+
+    socket.on("deleteProductCart", (deleteProductCartId) => {
+        console.log("Producto eliminado del carrito", deleteProductCartId)
+        io.emit("deleteProductCart", deleteProductCartId)
+    })
+
+    socket.on("clearCart", (clearCart) => {
+        console.log("Carrito vaciado:", clearCart)
+        io.emit("clearCart", clearCart)
     })
 })
