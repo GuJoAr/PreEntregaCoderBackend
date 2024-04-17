@@ -9,10 +9,13 @@ import session from "express-session"
 import FileStore from "session-file-store"
 import cookieParser from "cookie-parser"
 import MongoStore from "connect-mongo"
+import auth from "./config/auth.js"
+import passport from "./config/jwt.js"
 
 const app = express()
 const PORT = process.env.PORT || 8080
 const fileStore = FileStore(session)
+auth.initializePassport()
 
 //Middlewares
 app.set('views',__dirname+'/views')
@@ -23,6 +26,10 @@ app.use(express.static(__dirname+'/public'))
 app.engine('handlebars', handlebars.engine())
 app.use(bodyParser.json())
 app.use(cookieParser())
+
+// Middleware de Passport 
+app.use(passport.initialize())
+app.use(passport.session())
 
 //Route
 app.use("/api/", router)

@@ -1,5 +1,7 @@
 import User from "../models/user.js" 
-import bcrypt from "bcrypt" 
+import bcrypt from "bcrypt"
+import auth from "../../config/auth.js"
+import passport from "passport"
 
 const userController = {
     getLogin: async (req, res) => {
@@ -62,6 +64,17 @@ const userController = {
             console.error("Error al registrar usuario:", error) 
             next(error) 
         }
+    },
+
+    getGitHub: passport.authenticate("github", { scope: ["user:email"] }),
+    gitHubCallback: passport.authenticate("github", { failureRedirect: "/login" }),
+    handleGitHubCallback: async (req, res) => {
+        const token = auth.generateAuthToken(req.user) 
+        res.cookie("jwt", token, { httpOnly: true }) 
+        req.session.userId = req.user._id 
+        req.session.user = req.user 
+        req.session.isAuthenticated = true 
+        res.redirect("/") 
     },
 
     logOut: async (req, res) => {
