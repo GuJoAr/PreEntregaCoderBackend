@@ -1,28 +1,30 @@
 import passport from "passport" 
 import passportJWT from "passport-jwt" 
 import config from "./config.js" 
+import { cookieExtractor } from "./auth.js"
 
 const ExtractJWT = passportJWT.ExtractJwt 
 const JwtStrategy = passportJWT.Strategy 
 
 const jwtOptions = {
-    jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
+    jwtFromRequest: ExtractJWT.fromExtractors([cookieExtractor]),
     secretOrKey: config.jwtSecret,
 } 
 
-const strategy = new JwtStrategy(jwtOptions, (jwt_payload, next) => {
+const strategy = new JwtStrategy(jwtOptions, async (jwt_payload, done) => {
     try {
         if (jwt_payload) {
-            return next(null, jwt_payload) 
+            return done(null, jwt_payload) 
         } else {
-            return next(null, false) 
+            return done(null, false) 
         }
     } catch (error) {
         console.error('Error en jwt: ', error) 
-        return next(error, false) 
+        return done(error, false) 
     }
 }) 
 
 passport.use(strategy) 
 
 export default passport 
+

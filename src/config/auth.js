@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken"
 import User from "../dao/models/user.js" 
 import config from "./config.js" 
 import bcrypt from "bcrypt" 
+import { CLIENT_ID, CLIENT_SECRET, CALLBACK_URL } from "../utils.js"
 
 const initializePassport = () => {
     passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
@@ -31,9 +32,9 @@ const initializePassport = () => {
         "github",
         new GitHubStrategy(
             {
-                clientID: "Iv1.fc74e10587c7cef5",
-                clientSecret: "31fbe384d572ee0106659367c2ca266486a95a83",
-                callbackURL: "http://localhost:8080/api/sessions/githubcallback",
+                clientID: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                callbackURL: CALLBACK_URL,
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
@@ -75,9 +76,38 @@ const initializePassport = () => {
     }) 
 } 
 
-const generateAuthToken = (user) => {
+export const cookieExtractor = (req) => {
+    let token = null 
+    
+    if (req && req.cookies) {
+        token = req.cookies["jwtToken"] 
+    }
+    
+    return token 
+}
+
+export const generateAuthToken = (user) => {
     const token = jwt.sign({ _id: user._id }, config.jwtSecret, { expiresIn: '1h' }) 
     return token 
+} 
+
+export const authToken = (req, res, next) => {
+    const authHeader = req.headers.authorization 
+    const cookieToken = req.cookies.jwtToken 
+    const token = authHeader ? authHeader.split(" ")[1] : cookieToken 
+
+    if (!token) {
+        return res.status(401).send({ status: "error", message: "no autorizado" }) 
+    }
+
+    jwt.verify(token, config.jwtSecret, (error, credentials) => {
+        if (error) {
+            console.error('jwt error:', error) 
+            return res.status(401).send({ status: "error", message: "no autorizado" }) 
+        }
+        req.user = credentials.user 
+        next() 
+    }) 
 } 
 
 const auth = {

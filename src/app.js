@@ -1,5 +1,5 @@
 import express from 'express'
-import __dirname from './utils.js'
+import __dirname , { MONGO_URL, port } from './utils.js'
 import handlebars from 'express-handlebars'
 import { Server } from 'socket.io'
 import mongoose from 'mongoose'
@@ -11,21 +11,23 @@ import cookieParser from "cookie-parser"
 import MongoStore from "connect-mongo"
 import auth from "./config/auth.js"
 import passport from "./config/jwt.js"
+import cors from "cors"
 
 const app = express()
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || port
 const fileStore = FileStore(session)
 auth.initializePassport()
 
 //Middlewares
+app.use(express.json())
+app.use(cookieParser())
+app.use(cors())
+app.use(bodyParser.json())
+app.use(express.static(__dirname+'/public'))
+app.use(express.urlencoded({extended: true}))
+app.engine('handlebars', handlebars.engine())
 app.set('views',__dirname+'/views')
 app.set('view engine', 'handlebars')
-app.use(express.urlencoded({extended: true}))
-app.use(express.json())
-app.use(express.static(__dirname+'/public'))
-app.engine('handlebars', handlebars.engine())
-app.use(bodyParser.json())
-app.use(cookieParser())
 
 // Middleware de Passport 
 app.use(passport.initialize())
@@ -36,7 +38,7 @@ app.use("/api/", router)
 
 app.use(session({
     store: MongoStore.create({
-        mongoUrl: `mongodb://127.0.0.1:27017/ecommerce?retryWrites=true&w=majority`,
+        mongoUrl: MONGO_URL,
         ttl: 360,
     }),
     secret: "secret_key",
@@ -44,10 +46,7 @@ app.use(session({
     saveUninitialized: false,
 }))
 
-mongoose.connect(`mongodb://127.0.0.1:27017/ecommerce?retryWrites=true&w=majority`, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
+mongoose.connect(MONGO_URL)
 
 const db = mongoose.connection
 

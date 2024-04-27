@@ -1,5 +1,6 @@
 import express from "express" 
 import userController from "../dao/services/userController.js"
+import { authToken } from "../config/auth.js"
 
 const userRouter = express.Router() 
 
@@ -22,7 +23,7 @@ userRouter.post("/login", userController.login)
 userRouter.post("/register", userController.register) 
 
 // Maneja la solicitud para cerrar la sesion del usuario
-userRouter.get("/logout", userController.logOut) 
+userRouter.get("/logout", authToken, userController.logOut)
 
 export default userRouter 
 
