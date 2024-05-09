@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const formData = new FormData(registerForm) 
             const errorMessage = document.getElementById('errorMessage') 
 
-            fetch('http://localhost:8080/api/users/register', {
+            fetch('http://localhost:8080/api/sessions/register', {
                 method: 'POST',
                 body: formData,
             })

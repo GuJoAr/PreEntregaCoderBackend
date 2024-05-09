@@ -11,9 +11,9 @@ router.get("/", async(req, res) => {
     res.render("home")
 })
 
-router.use("/cart", cartRouter)
-router.use("/products", productRouter)
-router.use("/messages", messageRouter)
-router.use("/users", userRouter)
+router.use("/api/cart", cartRouter)
+router.use("/api/products", productRouter)
+router.use("/api/messages", messageRouter)
+router.use("/api/sessions", userRouter)
 
 export default router

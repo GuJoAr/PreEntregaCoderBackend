@@ -3,9 +3,8 @@ import { Strategy as LocalStrategy } from "passport-local"
 import GitHubStrategy from "passport-github2" 
 import jwt from "jsonwebtoken" 
 import User from "../dao/models/user.js" 
-import config from "./config.js" 
 import bcrypt from "bcrypt" 
-import { CLIENT_ID, CLIENT_SECRET, CALLBACK_URL } from "../utils.js"
+import { entorno } from "./config.js"
 
 const initializePassport = () => {
     passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
@@ -32,9 +31,9 @@ const initializePassport = () => {
         "github",
         new GitHubStrategy(
             {
-                clientID: CLIENT_ID,
-                clientSecret: CLIENT_SECRET,
-                callbackURL: CALLBACK_URL,
+                clientID: entorno.CLIENT_ID,
+                clientSecret: entorno.CLIENT_SECRET,
+                callbackURL: entorno.CALLBACK_URL,
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
@@ -87,7 +86,7 @@ export const cookieExtractor = (req) => {
 }
 
 export const generateAuthToken = (user) => {
-    const token = jwt.sign({ _id: user._id }, config.jwtSecret, { expiresIn: '1h' }) 
+    const token = jwt.sign({ _id: user._id }, entorno.JWT_SECRET, { expiresIn: '1h' }) 
     return token 
 } 
 
@@ -100,7 +99,7 @@ export const authToken = (req, res, next) => {
         return res.status(401).send({ status: "error", message: "no autorizado" }) 
     }
 
-    jwt.verify(token, config.jwtSecret, (error, credentials) => {
+    jwt.verify(token, entorno.JWT_SECRET, (error, credentials) => {
         if (error) {
             console.error('jwt error:', error) 
             return res.status(401).send({ status: "error", message: "no autorizado" }) 

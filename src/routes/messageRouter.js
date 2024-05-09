@@ -1,5 +1,5 @@
 import express from "express"
-import messageController from "../dao/services/messageController.js"
+import messageController from "../dao/controllers/message.controller.js"
 
 const messageRouter = express.Router()
 

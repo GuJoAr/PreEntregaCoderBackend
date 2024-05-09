@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const formData = new FormData(loginForm) 
             const errorMessage = document.getElementById('errorMessage') 
 
-            fetch('http://localhost:8080/api/users/login', {
+            fetch('http://localhost:8080/api/sessions/login', {
                 method: 'POST',
                 body: formData,
             })

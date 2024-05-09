@@ -1,5 +1,5 @@
 import express from 'express'
-import __dirname , { MONGO_URL, port } from './utils.js'
+import __dirname from './utils.js'
 import handlebars from 'express-handlebars'
 import { Server } from 'socket.io'
 import mongoose from 'mongoose'
@@ -11,10 +11,11 @@ import cookieParser from "cookie-parser"
 import MongoStore from "connect-mongo"
 import auth from "./config/auth.js"
 import passport from "./config/jwt.js"
+import { entorno } from './config/config.js'
 import cors from "cors"
 
 const app = express()
-const PORT = process.env.PORT || port
+const PORT = entorno.port
 const fileStore = FileStore(session)
 auth.initializePassport()
 
@@ -34,11 +35,11 @@ app.use(passport.initialize())
 app.use(passport.session())
 
 //Route
-app.use("/api/", router)
+app.use("/", router)
 
 app.use(session({
     store: MongoStore.create({
-        mongoUrl: MONGO_URL,
+        mongoUrl: entorno.MONGO_URL,
         ttl: 360,
     }),
     secret: "secret_key",
@@ -46,7 +47,7 @@ app.use(session({
     saveUninitialized: false,
 }))
 
-mongoose.connect(MONGO_URL)
+mongoose.connect(entorno.MONGO_URL)
 
 const db = mongoose.connection
 
