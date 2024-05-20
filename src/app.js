@@ -13,7 +13,21 @@ import auth from "./config/auth.js"
 import passport from "./config/jwt.js"
 import { entorno } from './config/config.js'
 import cors from "cors"
+import nodemailer from "nodemailer"
 
+
+// Nodemailer
+const dataTransport = {
+    service: "gmail",
+    host: "smtp.gmail.com",
+    secure: false,
+    port: 587,
+    auth: {
+        user: entorno.EMAIL_USERNAME,
+        pass: entorno.EMAIL_PASSWORD
+    }
+}
+const transport = nodemailer.createTransport(dataTransport);
 const app = express()
 const PORT = entorno.port
 const fileStore = FileStore(session)

@@ -2,7 +2,7 @@ import passport from "passport"
 import { Strategy as LocalStrategy } from "passport-local" 
 import GitHubStrategy from "passport-github2" 
 import jwt from "jsonwebtoken" 
-import User from "../dao/models/user.js" 
+import User from "../dao/Models/user.model.js"
 import bcrypt from "bcrypt" 
 import { entorno } from "./config.js"
 
@@ -108,6 +108,23 @@ export const authToken = (req, res, next) => {
         next() 
     }) 
 } 
+
+export const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        return next()
+    } else {
+        return res.status(403).json({ message: 'Acceso no autorizado' })
+    }
+}
+
+export const isUser = (req, res, next) => {
+    if(req.user && req.user.role === 'user') {
+        next()
+    } 
+    else {
+        return res.status(403).json({ error: 'Acceso no autorizado' })
+    }
+}
 
 const auth = {
     initializePassport,

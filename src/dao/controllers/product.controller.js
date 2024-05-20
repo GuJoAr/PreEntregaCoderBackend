@@ -1,109 +1,117 @@
-import Product from "../models/products.js";
+import productService from "../services/product.service.js"
+import Cart from "../Models/carts.model.js"
 
 const productController = {
     getProducts: async (req, res) => {
-        const { category, brand, sort } = req.query;
-        const currentPage = 1;
-
+        const { category, brand, sort } = req.query
+        let currentPage = req.query.page || 1
+        const userId = req.session.userId
+        const user = req.session.user
+        const isAuthenticated = req.session.isAuthenticated
+        const jwtToken = req.session.token
+        const userRole = req.session.userRole
         try {
-            let query = {};
-
-            if (category) {
-                query.category = category;
-            }
-
-            if (brand) {
-                query.brand = brand;
-            }
-
-            const options = {
-                limit: 2,
-                page: currentPage,
-                sort: { price: sort === 'asc' ? 1 : -1 }
-            };
-
-            const filter = await Product.paginate(query, options);
-            const products = filter.docs.map(product => product.toObject());
-
+            const carts = await Cart.find({user: userId}).lean()
+            const response = await productService.getProducts({ category, brand, sort }, currentPage)
             if (req.accepts('html')) {
-                return res.render('realTimeProducts', { Products: products, Query: filter });
+                res.render('realTimeProducts', { response, Carts: carts, user, isAuthenticated, jwtToken, userRole })
+            } else {
+                res.json({ message: "Lista de productos:", response })
             }
-
-            res.json({ Products: products });
         } catch (err) {
-            console.error('Error:', err);
-            return res.status(500).json({ error: "Error en la base de datos", details: err.message });
+            console.error('Error:', err)
+            return res.status(500).json({ error: "Error en la base de datos", details: err.message })
         }
     },
 
     getProductDetail: async (req, res) => {
-        const productId = req.params.id;
-
+        const productId = req.params.pid
+        const user = req.session.user
+        const isAuthenticated = req.session.isAuthenticated
+        const jwtToken = req.session.token
+        const userRole = req.session.userRole
         try {
-            const productDetail = await Product.findOne({ _id: productId }).lean();
-
+            const productDetail = await productService.getProductDetail(productId)
             if (req.accepts('html')) {
-                return res.render('product', { Product: productDetail });
+                return res.render('product', { Product: productDetail, user, isAuthenticated, jwtToken, userRole })
             }
-
-            res.json(productDetail);
+        } catch (err) {
+            console.error("Error al ver los detalles:", err)
+            return res.status(500).json({ error: "Error en la base de datos", details: err.message })
         }
-        catch (error) {
-            console.error("Error al ver los detalles:", err);
-            return res.status(500).json({ error: "Error en la base de datos", details: err.message });
+    },
+
+    getProductCategory: async (req, res) => {
+        const category = req.params.category
+        const { brand, sort } = req.query
+        let currentPage = req.query.page || 1
+        const user = req.session.user
+        const isAuthenticated = req.session.isAuthenticated
+        const jwtToken = req.session.token
+        const userRole = req.session.userRole
+        try {
+            const response = await productService.getProductCategory(category, { brand, sort }, currentPage)
+            if (req.accepts('html')) {
+                res.render('category', { response, user, isAuthenticated, jwtToken, userRole })
+            } else {
+                res.json({ message: "Lista de productos por categoria:", response })
+            }
+        } catch (err) {
+            console.error("Error al ver la categoria:", err)
+            return res.status(500).json({ error: "Error en la base de datos", details: err.message })
         }
     },
 
     addProduct: async (req, res) => {
-        const { title, brand, description, price, stock, category } = req.body;
-
+        const productData = req.body
         try {
-            const imageName = req.file ? req.file.filename : null;
-
-            if (!imageName) {
-                return res.status(400).json({ error: 'No se proporcionó una imagen válida' });
-            }
-
-            const newProduct = new Product({
-                title,
-                brand,
-                description,
-                price,
-                stock,
-                category,
-                image: imageName,
-            });
-
-            await newProduct.save();
-
+            const newProduct = await productService.addProduct(productData, req)
             return res.json({
                 message: "Producto creado!!!",
                 Product: newProduct,
-            });
+            })
         } catch (err) {
-            console.error("Error al guardar el Producto:", err);
-            return res.status(500).json({ error: "Error en la base de datos", details: err.message });
+            console.error("Error al guardar el Producto:", err)
+            return res.status(500).json({ error: "Error en la base de datos", details: err.message })
+        }
+    },
+
+    updateProduct: async (req, res) => {
+        const productId = req.params.pid
+        try {
+            const updatedProduct = await productService.updateProduct(productId, req)
+            return res.json({ message: "Producto actualizado!", product: updatedProduct })
+        } catch (err) {
+            console.error('Error:', err)
+            return res.status(500).json({ error: "Error en la base de datos", details: err.message })
+        }
+    },    
+
+    getUpdateProduct: async (req, res) => {
+        const productId = req.params.pid
+        const user = req.session.user
+        const isAuthenticated = req.session.isAuthenticated
+        const jwtToken = req.session.token
+        try {
+            const product = await productService.getProductDetail(productId)
+            const updateProductView = await productService.getUpdateProduct()
+            res.render(updateProductView, { isAuthenticated, jwtToken, user, product })
+        } catch (error) {
+            console.error("Error al obtener la vista de editar el producto:", error)
+            res.status(500).json({ error: "Error interno del servidor" })
         }
     },
 
     deleteProduct: async (req, res) => {
-        const productId = req.params.id;
-
+        const productId = req.params.pid
         try {
-            const deleteProduct = await Product.deleteOne({ _id: productId });
-
-            const products = await Product.find();
-
-            if (deleteProduct.deletedCount === 0) {
-                return res.status(404).json({ error: "Producto no encontrado" });
-            }
-
-            return res.json({ message: "Producto eliminado!", listProduct: products });
+            await productService.deleteProduct(productId)
+            return res.json({ message: "Producto eliminado!" })
         } catch (err) {
-            console.error('Error al borrar el producto:', err);
-            return res.status(500).json({ error: "Error en la base de datos", details: err.message });
+            console.error('Error:', err)
+            return res.status(500).json({ error: "Error en la base de datos", details: err.message })
         }
     }
 }
 
-export default productController;
+export default productController

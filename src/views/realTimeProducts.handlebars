@@ -1,8 +1,38 @@
-<h1 class="text-center">Productos a mostrar</h1>
+<h1 class="text-center">Productos en tiempo real</h1>
+<div class="container">
+    <!-- Mostrar un mensaje de bienvenida si el usuario está autenticado -->
+    {{#eq user.role "user"}}
+    <div class="alert alert-success" role="alert">
+        ¡Bienvenido usuario, {{user.first_name}} {{user.last_name}}!
+    </div>
+    {{/eq}}
+    {{#eq user.role "admin"}}
+    <div class="alert alert-success" role="alert">
+        ¡Bienvenido administrador, {{user.first_name}} {{user.last_name}}!
+    </div>
+    {{/eq}}
+</div>
+
+{{#eq user.role "user"}}
+<!-- Filtro de carritos -->
+<form action="/api/products/" method="GET" id="cartForm">
+    <label for="cart">Filtrar por carrito:</label>
+    <select name="cart" id="cart">
+        <option value="">Todos los carritos</option>
+        <!-- Aquí iteramos sobre los IDs de los carritos disponibles -->
+        {{#each Carts}}
+        <option value="{{this._id}}">{{this._id}}</option>
+        {{/each}}
+    </select>
+    <button type="button" id="goToCartBtn">Ir al carrito</button>
+</form>
+{{/eq}}
+
+{{#eq user.role "admin"}}
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-6 offset-md-3">
-            <form action="/addProduct" method="POST" id="addProductForm" enctype="multipart/form-data">
+            <form action="/api/products/" method="POST" id="addProductForm" enctype="multipart/form-data">
                 <div class="mb-3">
                     <input type="text" class="form-control" name="title" id="title" placeholder="Título" required>
                 </div>
@@ -10,7 +40,8 @@
                     <input type="text" class="form-control" name="brand" id="brand" placeholder="Marca" required>
                 </div>
                 <div class="mb-3">
-                    <textarea class="form-control" name="description" id="description" placeholder="Descripción" required></textarea>
+                    <textarea class="form-control" name="description" id="description" placeholder="Descripción"
+                        required></textarea>
                 </div>
                 <div class="mb-3">
                     <input type="number" class="form-control" name="price" id="price" placeholder="Precio" required>
@@ -19,16 +50,9 @@
                     <input type="number" class="form-control" name="stock" id="stock" placeholder="Stock" required>
                 </div>
                 <div class="mb-3">
-                    <select class="form-select" name="category" id="category" required>
-                        <option value="" disabled selected>Selecciona una categoria</option>
-                        <option value="tecnologia">Tecnología</option>
-                        <option value="libros">Libros</option>
-                        <option value="ropa">Ropa</option>
-                    </select>
-                </div>
-                <div class="mb-3">
                     <input type="file" class="form-control" name="image" id="image" accept="image/*" required>
                 </div>
+                <input type="hidden" name="userId" id="userId" value="{{userId}}">
                 <div class="mb-3">
                     <button type="submit" class="btn btn-primary">Agregar Producto</button>
                 </div>
@@ -36,14 +60,21 @@
         </div>
     </div>
 </div>
+{{/eq}}
+
+<!-- Ordenar por precio -->
+<div>
+    <a href="?sort=desc" class="btn btn-primary">Mayor precio</a>
+    <a href="?sort=asc" class="btn btn-primary">Menor precio</a>
+</div>
 
 <div class="container mt-5">
     <div class="row" id="productList">
-        {{#each products}}
+        {{#each response.Products}}
         <div class="col-md-4 mb-4">
             <div class="card">
                 <img src="/img/{{this.image}}" class="card-img-top img-fluid" alt="{{this.title}}"
-                    style="max-height: 400px aspect-ratio: 3/2 object-fit: contain">
+                    style="max-height: 400px; aspect-ratio: 3/2; object-fit: contain;">
                 <div class="card-body">
                     <h5 class="card-title">{{this.title}}</h5>
                     <p class="card-text">{{this.brand}}</p>
@@ -51,7 +82,16 @@
                     <p class="card-text">Precio: ${{this.price}}</p>
                     <p class="card-text">Stock: {{this.stock}}</p>
                     <p class="card-text">Categoría: {{this.category}}</p>
+                    <a href="http://localhost:8080/api/products/{{this._id}}" class="btn btn-primary">Ver detalles</a>
+                    {{#eq ../user.role "admin"}}
                     <button class="btn btn-danger delete-btn" data-product-id="{{this._id}}">Eliminar Producto</button>
+                    <a href="http://localhost:8080/api/products/updateProduct/{{this._id}}" class="btn btn-warning">Editar Producto</a>
+                    <a href="http://localhost:8080/api/products/{{this._id}}" class="btn btn-primary">Ver detalles</a>
+                    {{/eq}}
+                    {{#eq ../user.role "user"}}
+                    <button class="btn btn-success cart-btn" data-product-id="{{this._id}}">Agregar al carrito</button>
+                    <a href="http://localhost:8080/api/products/{{this._id}}" class="btn btn-primary">Ver detalles</a>
+                    {{/eq}}
                 </div>
             </div>
         </div>
@@ -64,16 +104,18 @@
         <div class="col-md-6 offset-md-3">
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center">
-                    {{#if Query.hasPrevPage}}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{Query.prevPage}}" tabindex="-1" aria-disabled="true">Anterior</a>
-                        </li>
+                    {{#if response.query.prevLink}}
+                    <li class="page-item">
+                        <a class="page-link" href="{{response.query.prevLink}}" tabindex="-1" aria-disabled="true">Anterior</a>
+                    </li>
                     {{/if}}
-                    <li class="page-item disabled"><a class="page-link" href="#">Página {{currentPage}}</a></li>
-                    {{#if Query.hasNextPage}}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{Query.nextPage}}">Siguiente</a>
-                        </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Página {{response.query.page}}</span>
+                    </li>
+                    {{#if response.query.nextLink}}
+                    <li class="page-item">
+                        <a class="page-link" href="{{response.query.nextLink}}">Siguiente</a>
+                    </li>
                     {{/if}}
                 </ul>
             </nav>
@@ -81,5 +123,6 @@
     </div>
 </div>
 
+
 <script src="/socket.io/socket.io.js"></script>
-<script type="module" src="/js/realTimeProducts.js"></script>
+<script type="module" src="../public/js/realTimeProducts.js"></script>

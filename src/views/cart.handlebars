@@ -9,15 +9,17 @@
                         <th scope="col">Precio Unitario</th>
                         <th scope="col">Cantidad</th>
                         <th scope="col">Total</th>
+                        <th scope="col">Borrar</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="cartList">
                     {{#each cart}}
                     <tr>
                         <td>{{this.product.title}}</td>
                         <td>${{this.product.price}}</td>
                         <td>{{this.quantity}}</td>
                         <td>${{this.total}}</td>
+                        <td><button class="btn btn-danger delete-btn" data-product-id="{{this._id}}" data-delete-url="http://localhost:8080/api/carts/{{../cid}}/products/{{this._id}}" onclick="deleteProductFromCart('{{../cid}}', '{{this._id}}')">Eliminar producto</button></td>
                     </tr>
                     {{/each}}
                 </tbody>
@@ -30,6 +32,7 @@
                     <p class="card-text">Total de Productos: {{cart.length}}</p>
                     <p class="card-text">Total a Pagar: ${{total}}</p>
                     <a href="/api/products/realtimeproducts" class="btn btn-primary">Seguir Comprando</a>
+                    <a href="http://localhost:8080/api/carts/{{Cart._id}}/purchase" class="btn btn-success" id="purchaseBtn" data-cart-id="{{Cart._id}}">Realizar compra</a>
                 </div>
             </div>
         </div>
