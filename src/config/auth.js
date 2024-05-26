@@ -10,17 +10,13 @@ const initializePassport = () => {
     passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
         try {
             const user = await User.findOne({ email }) 
-
             if (!user) {
                 return done(null, false, { message: 'Credenciales incorrectas' }) 
             }
-
             const validPassword = await bcrypt.compare(password, user.password) 
-
             if (!validPassword) {
                 return done(null, false, { message: 'Credenciales incorrectas' }) 
             }
-
             return done(null, user) 
         } catch (error) {
             return done(error) 
@@ -77,11 +73,9 @@ const initializePassport = () => {
 
 export const cookieExtractor = (req) => {
     let token = null 
-    
     if (req && req.cookies) {
         token = req.cookies["jwtToken"] 
     }
-    
     return token 
 }
 
@@ -94,11 +88,9 @@ export const authToken = (req, res, next) => {
     const authHeader = req.headers.authorization 
     const cookieToken = req.cookies.jwtToken 
     const token = authHeader ? authHeader.split(" ")[1] : cookieToken 
-
     if (!token) {
         return res.status(401).send({ status: "error", message: "no autorizado" }) 
     }
-
     jwt.verify(token, entorno.JWT_SECRET, (error, credentials) => {
         if (error) {
             console.error('jwt error:', error) 

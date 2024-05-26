@@ -14,6 +14,9 @@ import passport from "./config/jwt.js"
 import { entorno } from './config/config.js'
 import cors from "cors"
 import nodemailer from "nodemailer"
+import compression from "express-compression"
+import { fakerES as faker } from "@faker-js/faker"
+import errorHandler from "./errors/errorHandler.js"
 
 
 // Nodemailer
@@ -43,13 +46,41 @@ app.use(express.urlencoded({extended: true}))
 app.engine('handlebars', handlebars.engine())
 app.set('views',__dirname+'/views')
 app.set('view engine', 'handlebars')
-
+app.use(compression({
+    brotli: {enable: true}
+}))
+// Middleware de errores
+app.use(errorHandler)
 // Middleware de Passport 
 app.use(passport.initialize())
 app.use(passport.session())
 
 //Route
 app.use("/", router)
+
+// funcion que genera los productos simulados
+const generateMockProducts = () => {
+    const products = [];
+    for (let i = 0; i < 100; i++) {
+        products.push({
+            _id: new mongoose.Types.ObjectId(),
+            title: faker.commerce.productName(),
+            brand: faker.company.name(),
+            description: faker.commerce.productDescription(),
+            price: faker.commerce.price(),
+            stock: faker.random.numeric(2),
+            category: faker.commerce.department(),
+            image: faker.image.imageUrl()
+        });
+    }
+    return products
+}
+
+// endpoint que devuelve productos simulados
+app.get("/mockingproducts", (req, res) => {
+    const products = generateMockProducts()
+    res.json(products)
+})
 
 app.use(session({
     store: MongoStore.create({
