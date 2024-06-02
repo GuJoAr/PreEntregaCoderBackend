@@ -1,5 +1,5 @@
 import express from 'express'
-import __dirname from './utils.js'
+import __dirname from './utils/utils.js'
 import handlebars from 'express-handlebars'
 import { Server } from 'socket.io'
 import mongoose from 'mongoose'
@@ -17,6 +17,8 @@ import nodemailer from "nodemailer"
 import compression from "express-compression"
 import { fakerES as faker } from "@faker-js/faker"
 import errorHandler from "./errors/errorHandler.js"
+import { addLogger } from "./utils/logger-env.js"
+import logger from "./utils/logger.js"
 
 
 // Nodemailer
@@ -54,6 +56,7 @@ app.use(errorHandler)
 // Middleware de Passport 
 app.use(passport.initialize())
 app.use(passport.session())
+app.use(addLogger)
 
 //Route
 app.use("/", router)
@@ -82,6 +85,22 @@ app.get("/mockingproducts", (req, res) => {
     res.json(products)
 })
 
+// endpoint para los logs
+app.get("/loggerTest", (req, res) => {
+    try {
+        logger.fatal("Mensaje de error fatal")
+        logger.error("Mensaje de error")
+        logger.warn("Mensaje de error de advertencia")
+        logger.info("Mensaje de error de informacion")
+        logger.http("Mensaje de error de http")
+        logger.debug("Mensaje de error de depuracion")
+        res.status(200).send("Logs son correctos")
+    } catch (error) {
+        logger.error("Error en los logs:", error)
+        res.status(500).send("Error en los logs")
+    }
+})
+
 app.use(session({
     store: MongoStore.create({
         mongoUrl: entorno.MONGO_URL,
@@ -97,41 +116,41 @@ mongoose.connect(entorno.MONGO_URL)
 const db = mongoose.connection
 
 db.on("error", (error) => {
-    console.error("No se pudo conectar a la DB:", error)
+    logger.error("No se pudo conectar a la DB:", error)
 })
 
 db.once("open", () => {
-    console.log("Conectado con MongoDB")
+    logger.info("Conectado con MongoDB")
 })
 
-const server = app.listen(PORT,()=>console.log("Servidor conectado al puerto: ", PORT))
+const server = app.listen(PORT,()=>logger.info("Servidor conectado al puerto: ", PORT))
 const io = new Server(server)
 
 io.on('connection', socket => {
-    console.log("Nuevo cliente conectado!!")
+    logger.info("Nuevo cliente conectado!!")
 
     socket.on("deleteProduct", (deleteProductId) => {
-        console.log("Producto borrado:", deleteProductId)
+        logger.warning("Producto borrado:", deleteProductId)
         io.emit("deleteProduct", deleteProductId)
     })
 
     socket.on("addProduct", (addProduct) => {
-        console.log("Producto agregado:", addProduct)
+        logger.info("Producto agregado:", addProduct)
         io.emit("addProduct", addProduct)
     })
 
     socket.on("addMessage", (addMessage) => {
-        console.log("Mensaje agregado", addMessage)
+        logger.info("Mensaje agregado", addMessage)
         io.emit("addMessage", addMessage)
     })
 
     socket.on("deleteProductCart", (deleteProductCartId) => {
-        console.log("Producto eliminado del carrito", deleteProductCartId)
+        logger.warning("Producto eliminado del carrito", deleteProductCartId)
         io.emit("deleteProductCart", deleteProductCartId)
     })
 
     socket.on("clearCart", (clearCart) => {
-        console.log("Carrito vaciado:", clearCart)
+        logger.debug("Carrito vaciado:", clearCart)
         io.emit("clearCart", clearCart)
     })
 })

@@ -1,8 +1,9 @@
 import CartRepository from "../repositories/cart.repository.js"
 import Ticket from "../models/ticket.model.js"
 import CartDTO from "../DTO/cart.dto.js"
-import { generateRandomCode } from "../../utils.js"
+import { generateRandomCode } from "../../utils/utils.js"
 import Purchase from "../models/purchase.model.js"
+import logger from "../../utils/logger.js"
 
 const cartService = {
     getCartById: async (cartId, userId) => {
@@ -19,6 +20,7 @@ const cartService = {
             return cart
         } catch (error) {
             throw new Error("Error al obtener el carrito por su ID: " + error.message)
+            logger.error(`Error al obtener el carrito por su ID: ${cartId} para el user: ${userId} - ${error.message}`)
         }
     },
 
@@ -63,6 +65,7 @@ const cartService = {
             const newCart = await cart.save()
             return newCart
         } catch (error) {
+            logger.error(`Error al agregar el producto al carrito: ${error.message}`)
             throw new Error("Error al agregar producto al carrito: " + error.message)
         }
     },
@@ -72,6 +75,7 @@ const cartService = {
             const cart = await CartRepository.updateCart(cartId, products, total)
             return cart
         } catch (error) {
+            logger.error(`Error al actualizar el carrito: ${error.message}`)
             throw new Error("Error al actualizar el carrito: " + error.message)
         }
     },
@@ -81,6 +85,7 @@ const cartService = {
             const cart = await CartRepository.updateProductQuantityInCart(cartId, productId, quantity)
             return cart
         } catch (error) {
+            logger.error(`Error al actualizar la cantidad del producto:${error.message}`)
             throw new Error("Error al actualizar la cantidad del producto: " + error.message)
         }
     },
@@ -107,6 +112,7 @@ const cartService = {
                 }
             }
             if (productsToPurchase.length === 0) {
+                logger.warn(`No hay productos suficientes en stock para realizar la compra`)
                 throw new Error("No hay productos suficientes en stock para realizar la compra")
             }
             const shippingDTO = new CartDTO(country, state, city, street, postal_code, phone)
