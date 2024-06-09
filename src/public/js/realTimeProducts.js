@@ -105,7 +105,7 @@ socket.on('addProduct', (addProduct) => {
     renderProducts(addProduct)
 })
 
-if (userRole === "admin") {
+if (userRole === "admin" || "premium") {
     document.getElementById('addProductForm').addEventListener('submit', async (event) => {
         event.preventDefault()
         const formData = new FormData(event.target)

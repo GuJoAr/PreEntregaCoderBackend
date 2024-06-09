@@ -32,7 +32,7 @@ const dataTransport = {
         pass: entorno.EMAIL_PASSWORD
     }
 }
-const transport = nodemailer.createTransport(dataTransport);
+export const transport = nodemailer.createTransport(dataTransport);
 const app = express()
 const PORT = entorno.port
 const fileStore = FileStore(session)

@@ -1,5 +1,6 @@
 import productService from "../services/product.service.js"
 import Cart from "../Models/carts.model.js"
+import userService from "../services/user.service.js"
 
 const productController = {
     getProducts: async (req, res) => {
@@ -78,12 +79,21 @@ const productController = {
 
     updateProduct: async (req, res) => {
         const productId = req.params.pid
+        const productUpdateData = req.body
+        const userId = req.session.userId
+        const userRole = req.session.userRole
         try {
-            const updatedProduct = await productService.updateProduct(productId, req)
-            return res.json({ message: "Producto actualizado!", product: updatedProduct })
+            const product = await productService.getProductDetail(productId);
+            const user = await userService.getUserById(userId);
+            if (userRole === 'admin' || (userRole === 'premium' && user && user._id.toString() == product.owner._id.toString())) {
+                const updatedProduct = await productService.updateProduct(productId, req, productUpdateData, userId);
+                return res.json({ message: "Producto actualizado!", product: updatedProduct });
+            } else {
+                return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+            }
         } catch (err) {
-            console.error('Error:', err)
-            return res.status(500).json({ error: "Error en la base de datos", details: err.message })
+            console.error('Error:', err);
+            return res.status(500).json({ error: "Error en la base de datos", details: err.message });
         }
     },    
 
