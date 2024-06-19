@@ -19,6 +19,8 @@ import { fakerES as faker } from "@faker-js/faker"
 import errorHandler from "./errors/errorHandler.js"
 import { addLogger } from "./utils/logger-env.js"
 import logger from "./utils/logger.js"
+import swaggerJSDoc from "swagger-jsdoc"
+import swaggerUiExpress from "swagger-ui-express"
 
 
 // Nodemailer
@@ -110,6 +112,20 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
 }))
+
+const swaggerOptions = {
+    definition: {
+        openapi: "3.0.1",
+        info: {
+            title: "Documentacion de la entrega final",
+            description: "entrega final"
+        }
+    },
+    apis: [`${__dirname}/docs/**/*.yaml`]
+}
+
+const specs = swaggerJSDoc(swaggerOptions)
+app.use("/apidocs", swaggerUiExpress.serve, swaggerUiExpress.setup(specs))
 
 mongoose.connect(entorno.MONGO_URL)
 
