@@ -1,5 +1,5 @@
 import fs from "fs" 
-import { getProductsFilePath } from "../../utils.js" 
+import { getProductsFilePath } from "../../utils/utils.js"
 
 const jsonFilePath = getProductsFilePath() 
 

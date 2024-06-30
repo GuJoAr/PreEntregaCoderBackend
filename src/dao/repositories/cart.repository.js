@@ -19,6 +19,65 @@ const CartRepository = {
         }
     },
 
+    findByUserId: async (userId) => {
+        try {
+            const cart = await Cart.findOne({ user: userId })
+            return cart
+        }
+        catch (error) {
+            throw new Error("Error al obtener el carrito por ID: " + error.message)
+        }
+    },
+    
+
+    getCartByUser: async(userId) => {
+        try {
+            const cart = await Cart.find({user: userId}).lean()
+            if(!cart) {
+                throw new Error("Usted no es el creador de este carrito")
+            }
+            return cart
+        } catch (error) {
+            throw new Error("Error al obtener el carrito por userId: " + error.message)
+        }
+    },
+
+    addProductToCart: async (productId, userId, cart, product) => {
+        try {
+            if (cart) {
+                const productIndex = cart.products.findIndex(p => p.product.toString() === productId)
+                if (productIndex > -1) {
+                    cart.products[productIndex].productQuantity += 1
+                    cart.products[productIndex].productTotal += product.price
+                } else {
+                    cart.products.push({
+                        product: productId,
+                        productQuantity: 1,
+                        productPrice: product.price,
+                        productTotal: product.price,
+                    })
+                }
+                cart.total += product.price
+            } else {
+                const cartItem = new Cart({
+                    products: [{
+                        product: productId,
+                        productQuantity: 1,
+                        productPrice: product.price,
+                        productTotal: product.price,
+                    }],
+                    total: product.price,
+                    user: userId,
+                })
+                cart = await cartItem.save()
+            }
+            const newCart = await cart.save()
+            return newCart
+        } catch (error) {
+            throw new Error("Error al agregar producto al carrito: " + error.message)
+        }
+    },
+
     createCart: async () => {
         try {
             const cart = new Cart({

@@ -1,9 +1,14 @@
 import CartRepository from "../repositories/cart.repository.js"
-import Ticket from "../models/ticket.model.js"
-import CartDTO from "../DTO/cart.dto.js"
+import userRepository from "../repositories/user.repository.js"
+import productRepository from "../Repositories/product.repository.js"
+import ticketRepository from "../repositories/ticket.repository.js"
+import purchaseRepository from "../repositories/purchase.repository.js"
+import TicketDTO from "../DTO/ticket.dto.js"
+import PurchaseDTO from "../DTO/purchase.dto.js"
 import { generateRandomCode } from "../../utils/utils.js"
-import Purchase from "../models/purchase.model.js"
 import logger from "../../utils/logger.js"
+
+
 
 const cartService = {
     getCartById: async (cartId, userId) => {
@@ -19,53 +24,54 @@ const cartService = {
             cart.totalPrice = totalPrice
             return cart
         } catch (error) {
-            throw new Error("Error al obtener el carrito por su ID: " + error.message)
             logger.error(`Error al obtener el carrito por su ID: ${cartId} para el user: ${userId} - ${error.message}`)
+            throw new Error("Error al obtener el carrito por su ID: " + error.message)
         }
     },
 
-    addProductToCart: async (productId, userId) => {
+    getCartByUser: async(userId) => {
         try {
-            const user = await User.findById(userId)
-            const product = await Product.findById(productId)
+            logger.info(`Buscando carrito para el user: ${userId}`)
+            const cartByUser = await cartRepository.getCartByUser(userId)
+            logger.info(`Carrito encontrado con exito para el user: ${userId}`)
+            return cartByUser
+        } catch (error) {
+            logger.error(`Error al encontrar el carrito por el user: ${userId} - ${error.message}`)
+            throw new Error("Error al buscar el carrito del usuario: " + error.message)
+        }
+    },
+
+    addProductToCart: async (productId, userId, userRole) => {
+        try {
+            logger.info(`Agregando producto ID: ${productId} al carrito del user: ${userId}`)
+            const product = await productRepository.getProductForCart(productId)
             if (!product) {
+                logger.warn(`Producto no encontrado: ${productId}`)
                 throw new Error("Producto no encontrado")
             }
             if (product.stock < 1) {
+                logger.warn(`Producto fuera de stock: ${productId}`)
                 throw new Error("Producto fuera de stock")
             }
-            let cart = await Cart.findOne({ user: userId })
-            if (cart) {
-                const productIndex = cart.products.findIndex(p => p.product.toString() === productId)
-                if (productIndex > -1) {
-                    cart.products[productIndex].productQuantity += 1
-                    cart.products[productIndex].productTotal += product.price
-                } else {
-                    cart.products.push({
-                        product: productId,
-                        productQuantity: 1,
-                        productPrice: product.price,
-                        productTotal: product.price,
-                    })
-                }
-                cart.total += product.price
-            } else {
-                const cartItem = new Cart({
-                    products: [{
-                        product: productId,
-                        productQuantity: 1,
-                        productPrice: product.price,
-                        productTotal: product.price,
-                    }],
-                    total: product.price,
-                    user: userId,
-                })
-                cart = await cartItem.save()
+            const user = await userRepository.findUser(userId)
+            if (!user) {
+                logger.warn(`User no logueado: ${userId}`)
+                throw new Error("Usted no esta logueado")
             }
-            const newCart = await cart.save()
+            if(userRole !== "user" && userRole !== "premium") {
+                logger.warn(`User no autorizado`)
+                throw new Error("Usted no esta autorizado")
+            }
+            if(userRole == "premium" && userId == product.owner) {
+                logger.warn(`User es autor de este producto`)
+                throw new Error("Usted es el creador de este producto, no puede agregarlo al carrito")
+            }
+            let cart = await cartRepository.findByUserId(userId)
+            const newCart = await cartRepository.addProductToCart(productId, userId, cart, product)
+            logger.info(`Producto agregado con exito al carrito: ${JSON.stringify(newCart)}`)
             return newCart
         } catch (error) {
-            logger.error(`Error al agregar el producto al carrito: ${error.message}`)
+            logger.error(`Error al agregar el producto al carrito del user: ${userId} - ${error.message}`)
             throw new Error("Error al agregar producto al carrito: " + error.message)
         }
     },
@@ -82,11 +88,21 @@ const cartService = {
 
     updateProductQuantityInCart: async (cartId, productId, quantity) => {
         try {
-            const cart = await CartRepository.updateProductQuantityInCart(cartId, productId, quantity)
+            const parsedQuantity = parseInt(quantity, 10)
+            if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
+                throw new Error("La cantidad debe ser un valor positivo.")
+            }
+            logger.info(`Actualizando la cantidad del producto ID: ${productId} en el carrito ID: ${cartId}`)
+            const cart = await cartRepository.updateProductQuantityInCart(cartId, productId, parsedQuantity)
+            
+            if (!cart) {
+                throw new Error(`No se encontró el carrito con ID ${cartId}`)
+            }
+            logger.info(`Cantidad del producto actualizada con éxito en el carrito ID: ${cartId}`)
             return cart
         } catch (error) {
-            logger.error(`Error al actualizar la cantidad del producto:${error.message}`)
-            throw new Error("Error al actualizar la cantidad del producto: " + error.message)
+            logger.error(`Error al actualizar la cantidad del producto en el carrito ID: ${cartId} - ${error.message}`)
+            throw new Error("Error al actualizar la cantidad del producto en el carrito: " + error.message)
         }
     },
 
@@ -98,7 +114,7 @@ const cartService = {
             const productsToPurchase = []
             const productsToKeepInCart = []
             for (const item of cart.products) {
-                const product = await Product.findById(item.product)
+                const product = await productRepository.findProductById(item.product)
                 if (!product) {
                     throw new Error(`Producto con ID ${item.product} no encontrado`)
                 }
@@ -115,34 +131,49 @@ const cartService = {
                 logger.warn(`No hay productos suficientes en stock para realizar la compra`)
                 throw new Error("No hay productos suficientes en stock para realizar la compra")
             }
-            const shippingDTO = new CartDTO(country, state, city, street, postal_code, phone)
-            const paymentDTO = new CartDTO(card_bank, security_number)
-            const purchase = new Purchase({
+            const shippingDTO = {
+                country,
+                state,
+                city,
+                street,
+                postalCode: postal_code,
+                phone
+            }
+            const paymentDTO = {
+                cardBank: card_bank,
+                securityNumber: security_number
+            }
+            const purchaseDTO = new PurchaseDTO({
                 user: userId,
                 products: productsToPurchase.map(item => ({
                     product: item.product,
-                    productQuantity: item.productQuantity,
-                    productTotal: item.productTotal,
+                    quantity: item.productQuantity,
+                    unitPrice: item.productPrice,
+                    totalPrice: item.productTotal
                 })),
                 shipping: shippingDTO,
-                payment: paymentDTO,
+                payment: paymentDTO
             })
-            const ticket = new Ticket({
+            console.log("Compra en proceso:", purchaseDTO)
+            const ticketDTO = new TicketDTO({
                 code: generateRandomCode(10),
-                purchaseDatetime: new Date(),
+                purchase_datetime: new Date(),
                 amount: totalPurchaseAmount,
                 purchaser: userId,
                 products: productsToPurchase.map(item => ({
-                    id: item.product,
                     product: item.product.title,
                     productQuantity: item.productQuantity,
-                    productTotal: item.productTotal,
-                })),
+                    productTotal: item.productTotal
+                }))
             })
-            await ticket.save()
-            await purchase.save()
-            await CartRepository.clearCart(cartId)
-            await CartRepository.updateCart(cartId, productsToKeepInCart, totalPurchaseAmount)
+            console.log("Ticket en proceso:", ticketDTO)
+            const ticket = await ticketRepository.createTicket(ticketDTO)
+            const purchase = await purchaseRepository.createPurchase(purchaseDTO)
+            console.log("Ticket:", ticket)
+            console.log("Compra:", purchase)
+            logger.info(`Compra exitosa: ${JSON.stringify(purchase)}`)
+            await cartRepository.clearCart(cartId)
+            await cartRepository.updateCart(cartId, productsToKeepInCart, totalPurchaseAmount)
             return ticket
         } catch (error) {
             throw new Error("Error al realizar la compra: " + error.message)

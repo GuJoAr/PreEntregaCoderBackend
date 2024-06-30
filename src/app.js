@@ -106,7 +106,7 @@ app.get("/loggerTest", (req, res) => {
 app.use(session({
     store: MongoStore.create({
         mongoUrl: entorno.MONGO_URL,
-        ttl: 360,
+        ttl: 3600,
     }),
     secret: "secret_key",
     resave: false,
@@ -127,7 +127,10 @@ const swaggerOptions = {
 const specs = swaggerJSDoc(swaggerOptions)
 app.use("/apidocs", swaggerUiExpress.serve, swaggerUiExpress.setup(specs))
 
-mongoose.connect(entorno.MONGO_URL)
+mongoose.connect(entorno.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
 
 const db = mongoose.connection
 

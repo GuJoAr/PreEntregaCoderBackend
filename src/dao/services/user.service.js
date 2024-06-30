@@ -3,18 +3,22 @@ import { generateAuthToken } from "../../config/auth.js"
 import passport from "passport" 
 import userRepository from "../Repositories/user.repository.js"
 import UserDTO from "../DTO/user.dto.js"
+import logger from "../../utils/logger.js" 
 
 const userService = {
     getUserById: async (userId) => {
         try {
+            logger.info(`Buscando user ID: ${userId}`)
             const user = await userRepository.findById(userId, true)
             return user
         } catch (error) {
+            logger.error(`Error al buscar el user ID: ${userId} - ${error.message}`)
             throw new Error("Error al obtener usuario por su ID: " + error.message)
         }
     }, 
 
     getLogin: async () => {
+        logger.info(`Logeado correctamete`)
         return "login"
     },
 
@@ -22,15 +26,18 @@ const userService = {
         return new Promise((resolve, reject) => {
             passport.authenticate("local", (err, user, info) => {
                 if (err) {
-                    reject(err)
+                    logger.error(`Error durante la autenticacion del login: ${err.message}`)
+                    return reject(err)
                 }
                 if (!user) {
-                    reject(new Error("Credenciales inválidas"))
+                    logger.warn(`Credenciales de inicio de sesión no válidas para email: ${email}`)
+                    return reject(new Error("Credenciales inválidas"))
                 }
                 if (email === "adminCoder@coder.com" && password === "adminCod3er123") {
                     user.role = "admin"
                 }
                 const access_token = generateAuthToken(user)
+                logger.info(`User iniciado sesión exitosamente: ${email}`)
                 resolve({ user, access_token })
             })({ body: { email, password } }, {})
         })
@@ -43,6 +50,7 @@ const userService = {
     register: async (userData) => {
         const { first_name, last_name, email, age, password } = userData
         try {
+            logger.info(`Registrando nuevo user: ${email}`)
             const existingUser = await userRepository.findByEmail(email)
             if (existingUser) {
                 throw new Error("El usuario ya existe")
@@ -54,6 +62,7 @@ const userService = {
             const access_token = generateAuthToken(createdUser)
             return { newUser: createdUser, access_token }
         } catch (error) {
+            logger.error(`Error al registrar el user: ${email} - ${error.message}`)
             throw error
         }
     },
@@ -72,7 +81,7 @@ const userService = {
             const access_token = generateAuthToken(user)
             return { user, access_token }
         } catch (error) {
-            console.error('Error en el callback de GitHub:', error)
+            logger.error(`Error en GitHub callback del user: ${user.email} - ${error.message}`)
             throw new Error("Error interno del servidor")
         }
     },

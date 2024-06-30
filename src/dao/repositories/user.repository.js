@@ -22,7 +22,16 @@ const userRepository = {
         } catch (error) {
             throw new Error("Error al buscar usuario por su ID: " + error.message)
         }
-    },    
+    },
+
+    findUser: async (userId) => {
+        try {
+            const user = await User.findById(userId);
+            return user;
+        } catch (error) {
+            throw new Error("Error al buscar usuario por ID: " + error.message);
+        }
+    },
 
     createUser: async (userData) => {
         try {

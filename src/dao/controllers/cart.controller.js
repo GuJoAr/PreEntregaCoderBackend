@@ -21,10 +21,9 @@ const cartController = {
     },
 
     addProductToCart: async (req, res) => {
-        const { productId } = req.body
-        const userId = req.session.userId
+        const { productId, userId, userRole } = req.body
         try {
-            const cart = await cartService.addProductToCart(productId, userId)
+            const cart = await cartService.addProductToCart(productId, userId, userRole)
             return res.json({ message: "Producto agregado al carrito correctamente", cartItemId: cart._id })
         } catch (error) {
             console.error('Error:', error)
@@ -34,8 +33,7 @@ const cartController = {
 
     updateCart: async (req, res) => {
         const cartId = req.params.cid
-        const userId = req.session.userId
-        const { products } = req.body
+        const { products, userId } = req.body
         try {
             const cart = await cartService.updateCart(cartId, userId, products)
             return res.json(cart)
@@ -75,9 +73,13 @@ const cartController = {
 
     updateProductQuantityInCart: async (req, res) => {
         const { cid, pid } = req.params
-        const { quantity, userId } = req.body
+        const userId = req.session.userId
+        const { quantity } = req.body
         try {
             const cart = await cartService.updateProductQuantityInCart(cid, userId, pid, quantity)
+            if (!cart) {
+                return res.status(404).json({ error: "Carrito no encontrado" })
+            }
             return res.json({ message: "Cantidad del producto en el carrito actualizada correctamente", cart })
         } catch (error) {
             console.error("Error al actualizar la cantidad del producto en el carrito:", error)

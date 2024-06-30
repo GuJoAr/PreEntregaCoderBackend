@@ -1,6 +1,6 @@
 import productService from "../services/product.service.js"
-import Cart from "../Models/carts.model.js"
 import userService from "../services/user.service.js"
+import cartService from "../services/cart.service.js"
 
 const productController = {
     getProducts: async (req, res) => {
@@ -12,7 +12,7 @@ const productController = {
         const jwtToken = req.session.token
         const userRole = req.session.userRole
         try {
-            const carts = await Cart.find({user: userId}).lean()
+            const carts = await cartService.getCartByUser(userId)
             const response = await productService.getProducts({ category, brand, sort }, currentPage)
             if (req.accepts('html')) {
                 res.render('realTimeProducts', { response, Carts: carts, user, isAuthenticated, jwtToken, userRole })
