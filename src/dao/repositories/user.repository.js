@@ -10,17 +10,12 @@ const userRepository = {
         }
     },
 
-    findById: async (userId, useLean = false) => {
+    findById: async (userId) => {
         try {
-            if (useLean) {
-                const user = await User.findById(userId).lean()
-                return user
-            } else {
-                const user = await User.findById(userId).populate('createdProducts')
-                return user
-            }
+            const user = await User.findById(userId).lean();
+            return user;
         } catch (error) {
-            throw new Error("Error al buscar usuario por su ID: " + error.message)
+            throw new Error("Error al buscar usuario por su ID: " + error.message);
         }
     },
 
@@ -58,6 +53,25 @@ const userRepository = {
             return updatedUser;
         } catch (error) {
             throw new Error("Error al actualizar usuario: " + error.message);
+        }
+    },
+
+    uploadDocs: async (userId, documents) => {
+        try {
+            const user = await User.findById(userId)
+            if (!user) {
+                throw new Error("Usuario no encontrado")
+            }
+            documents.forEach(doc => {
+                user.documents.push({
+                    name: doc.originalname,
+                    reference: doc.path
+                })
+            })
+            await user.save()
+            return user.documents
+        } catch (error) {
+            throw new Error("Error al subir los documentos: " + error.message)
         }
     }
 }

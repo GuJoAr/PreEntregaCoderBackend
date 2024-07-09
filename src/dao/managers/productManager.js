@@ -39,10 +39,8 @@ class productManager {
     async getProductById(req, res) {
         try {
             const pid = parseInt(req.params.pid) 
-            const productos = readJsonFile(jsonFilePath) 
-            
-            const product = productos.find(producto => producto.id === pid) 
-            
+            const productos = readJsonFile(jsonFilePath)
+            const product = productos.find(producto => producto.id === pid)
             if (!product) {
                 res.status(404).json({ error: "Producto no encontrado" }) 
             } else {

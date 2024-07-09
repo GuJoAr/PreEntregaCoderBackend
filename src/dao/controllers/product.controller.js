@@ -20,7 +20,7 @@ const productController = {
                 res.json({ message: "Lista de productos:", response })
             }
         } catch (err) {
-            console.error('Error:', err)
+            console.error('Error en la base de datos:', err)
             return res.status(500).json({ error: "Error en la base de datos", details: err.message })
         }
     },
@@ -114,11 +114,19 @@ const productController = {
 
     deleteProduct: async (req, res) => {
         const productId = req.params.pid
+        const userId = req.session.userId
+        const userRole = req.session.userRole
         try {
-            await productService.deleteProduct(productId)
-            return res.json({ message: "Producto eliminado!" })
+            const product = await productService.getProductDetail(productId)
+            const user = await userService.getUserById(userId)
+            if (userRole === 'admin' || (userRole === 'premium' && user && user._id.toString() == product.userId._id.toString())) {
+                await productService.deleteProduct(productId)
+                return res.json({ message: "Producto eliminado!" })
+            } else {
+                return res.status(403).json({ message: 'No tienes permiso para esta accion' })
+            }
         } catch (err) {
-            console.error('Error:', err)
+            console.error('Error en la base de datos:', err)
             return res.status(500).json({ error: "Error en la base de datos", details: err.message })
         }
     }

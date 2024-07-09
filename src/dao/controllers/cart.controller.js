@@ -24,7 +24,7 @@ const cartController = {
         const { productId, userId, userRole } = req.body
         try {
             const cart = await cartService.addProductToCart(productId, userId, userRole)
-            return res.json({ message: "Producto agregado al carrito correctamente", cartItemId: cart._id })
+            return res.json({ message: "Producto agregado correctamente", cartItemId: cart._id })
         } catch (error) {
             console.error('Error:', error)
             return res.status(500).json({ error: "Error en la base de datos", details: error.message })

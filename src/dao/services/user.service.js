@@ -8,11 +8,11 @@ import logger from "../../utils/logger.js"
 const userService = {
     getUserById: async (userId) => {
         try {
-            logger.info(`Buscando user ID: ${userId}`)
+            logger.info(`Buscando usuario por su ID: ${userId}`)
             const user = await userRepository.findById(userId, true)
             return user
         } catch (error) {
-            logger.error(`Error al buscar el user ID: ${userId} - ${error.message}`)
+            logger.error(`Error al buscar el usuario por su ID: ${userId} - ${error.message}`)
             throw new Error("Error al obtener usuario por su ID: " + error.message)
         }
     }, 
@@ -24,7 +24,7 @@ const userService = {
 
     login: async (email, password) => {
         return new Promise((resolve, reject) => {
-            passport.authenticate("local", (err, user, info) => {
+            passport.authenticate("local", async (err, user, info) => {
                 if (err) {
                     logger.error(`Error durante la autenticacion del login: ${err.message}`)
                     return reject(err)
@@ -36,6 +36,9 @@ const userService = {
                 if (email === "adminCoder@coder.com" && password === "adminCod3er123") {
                     user.role = "admin"
                 }
+                // para el last_connection
+                user.last_connection = new Date()
+                await user.save()
                 const access_token = generateAuthToken(user)
                 logger.info(`User iniciado sesión exitosamente: ${email}`)
                 resolve({ user, access_token })
@@ -186,6 +189,50 @@ const userService = {
 
     getResetPassword: async () => {
         return "resetPassword"
+    },
+
+    changeUserRole: async (userId, files) => {
+        try {
+            const user = await userRepository.findUser(userId)
+            if (!user) {
+                throw new Error("El usuario no existe")
+            }
+            if (user.role === "user") {
+                if (!files || !files.identificacion || !files.comprobanteDomicilio || !files.comprobanteCuenta) {
+                    throw new Error("Se requiere la documentación completa para cambiar el rol a premium")
+                }
+                await userRepository.uploadDocs(userId, files.identificacion)
+                await userRepository.uploadDocs(userId, files.comprobanteDomicilio)
+                await userRepository.uploadDocs(userId, files.comprobanteCuenta)
+                user.role = "premium"
+            }
+            else if(user.role === "premium") {
+                user.role = "user"
+            }
+            await user.save()
+            return user
+        } catch (error) {
+            throw new Error("Error al cambiar el rol del usuario: " + error.message)
+        }
+    },     
+
+    getChangeUserRole: async () => {
+        return "changeUserRole"
+    },
+
+    getUplaodDocs: async () => {
+        return "uploadDocs"
+    },
+
+    uploadDocs: async (userId, files) => {
+        try {
+            const documents = await userRepository.uploadDocs(userId, files)
+            logger.info(`Documentos subidos exitosamente para el usuario: ${userId}`)
+            return documents
+        } catch (error) {
+            logger.error(`Error al subir documentos para el usuario: ${userId} - ${error.message}`)
+            throw new Error("Error al subir documentos: " + error.message)
+        }
     },
 
     logOut: async (res, req) => {

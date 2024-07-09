@@ -60,8 +60,9 @@ const userController = {
 
     register: async (req, res, next) => {
         const userData = req.body
+        const file = req.file
         try {
-            const { newUser, access_token } = await userService.register(userData)
+            const { newUser, access_token } = await userService.register(userData, file)
             req.session.token = access_token
             req.session.userId = newUser._id
             req.session.user = newUser
@@ -176,7 +177,6 @@ const userController = {
     },
 
     getResetPassword: async (req, res) => {
-        const { token } = req.params;
         try {
             const resetPasswordView = await userService.getResetPassword();
             res.render(resetPasswordView);
@@ -225,6 +225,57 @@ const userController = {
             res.render(changePasswordView, { isAuthenticated, jwtToken })
         } catch (error) {
             console.error("Error al obtener la vista de cambiar contraseña:", error)
+            res.status(500).json({ error: "Error interno del servidor" })
+        }
+    },
+
+    getChangeUserRole: async (req, res) => {
+        const user = req.session.user
+        const isAuthenticated = req.session.isAuthenticated
+        const jwtToken = req.session.token
+        const userId = req.params.uid
+        try {
+            const changeUserRoleView = await userService.getChangeUserRole();
+            res.render(changeUserRoleView, { user, isAuthenticated, jwtToken, userId })
+        } catch (error) {
+            console.error("Error al obtener la vista de cambio de role:", error)
+            res.status(500).json({ error: "Error interno del servidor" })
+        }
+    },
+
+    changeUserRole: async (req, res) => {
+        const userId = req.params.uid
+        const files = req.files
+        try {
+            const updatedUser = await userService.changeUserRole(userId, files)
+            res.json(updatedUser)
+        } catch (error) {
+            console.error("Error al cambiar el rol del usuario:", error)
+            res.status(500).json({ error: "Error interno del servidor" })
+        }
+    },
+
+    getUploadDocs: async (req, res) => {
+        const userId = req.params.uid;
+        try {
+            const user = await userService.getUserById(userId)
+            const uploadDocsView = await userService.getDocs()
+            res.render(uploadDocsView)
+        } catch (error) {
+            console.error("Error al obtener la vista de subida de documentos:", error)
+            res.status(500).json({ error: "Error interno del servidor" })
+        }
+    },
+
+    uploadDocs: async (req, res) => {
+        const userId = req.params.uid
+        const files = req.files
+        try {
+            const uploadedDocs = await userService.uploadDocs(userId, files)
+            res.json(uploadedDocs)
+        }
+        catch (error) {
+            console.error("Error al subir los documents:", error)
             res.status(500).json({ error: "Error interno del servidor" })
         }
     },

@@ -9,7 +9,6 @@ import { generateRandomCode } from "../../utils/utils.js"
 import logger from "../../utils/logger.js"
 
 
-
 const cartService = {
     getCartById: async (cartId, userId) => {
         try {
@@ -93,7 +92,7 @@ const cartService = {
                 throw new Error("La cantidad debe ser un valor positivo.")
             }
             logger.info(`Actualizando la cantidad del producto ID: ${productId} en el carrito ID: ${cartId}`)
-            const cart = await cartRepository.updateProductQuantityInCart(cartId, productId, parsedQuantity)
+            const cart = await CartRepository.updateProductQuantityInCart(cartId, productId, parsedQuantity)
             
             if (!cart) {
                 throw new Error(`No se encontró el carrito con ID ${cartId}`)
@@ -172,8 +171,8 @@ const cartService = {
             console.log("Ticket:", ticket)
             console.log("Compra:", purchase)
             logger.info(`Compra exitosa: ${JSON.stringify(purchase)}`)
-            await cartRepository.clearCart(cartId)
-            await cartRepository.updateCart(cartId, productsToKeepInCart, totalPurchaseAmount)
+            await CartRepository.clearCart(cartId)
+            await CartRepository.updateCart(cartId, productsToKeepInCart, totalPurchaseAmount)
             return ticket
         } catch (error) {
             throw new Error("Error al realizar la compra: " + error.message)

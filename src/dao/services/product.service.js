@@ -44,12 +44,12 @@ const productService = {
     },
 
     addProduct: async (productData, req) => {
-        const { title, brand, description, price, stock, category, owner } = productData
+        const { title, brand, description, price, stock, category, userId } = productData
         try {
             logger.info(`Agregando los datos del producto: ${JSON.stringify(productData)}`)
-            const user = await userRepository.findById(owner)
+            const user = await userRepository.findById(userId)
             if (!user) {
-                logger.warn(`Usuario no encontrado: ${owner}`)
+                logger.warn(`Usuario no encontrado: ${userId}`)
                 throw new Error("Usuario no encontrado")
             }
             const imageName = req.file ? req.file.filename : null
@@ -57,7 +57,7 @@ const productService = {
                 logger.warn(`Imagen invalida para el producto: ${title}`)
                 throw new Error("Imagen no encontrada")
             }
-            const productDTO = new ProductDTO(title, brand, description, price, stock, category, imageName, owner)
+            const productDTO = new ProductDTO(title, brand, description, price, stock, category, imageName, userId)
             const newProduct = await productRepository.createProduct(productDTO)
             logger.info(`Producto agregado exitosamente: ${JSON.stringify(newProduct)}`)
             return newProduct

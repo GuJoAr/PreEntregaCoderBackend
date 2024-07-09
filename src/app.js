@@ -38,9 +38,9 @@ export const transport = nodemailer.createTransport(dataTransport);
 const app = express()
 const PORT = entorno.port
 const fileStore = FileStore(session)
-auth.initializePassport()
 
 //Middlewares
+auth.initializePassport()
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors())
