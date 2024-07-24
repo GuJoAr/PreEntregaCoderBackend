@@ -256,11 +256,13 @@ const userController = {
     },
 
     getUploadDocs: async (req, res) => {
-        const userId = req.params.uid;
+        const userId = req.params.uid
+        const isAuthenticated = req.session.isAuthenticated
+        const jwtToken = req.session.token
         try {
             const user = await userService.getUserById(userId)
             const uploadDocsView = await userService.getDocs()
-            res.render(uploadDocsView)
+            res.render(uploadDocsView, isAuthenticated, jwtToken)
         } catch (error) {
             console.error("Error al obtener la vista de subida de documentos:", error)
             res.status(500).json({ error: "Error interno del servidor" })

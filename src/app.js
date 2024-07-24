@@ -36,7 +36,7 @@ const dataTransport = {
 }
 export const transport = nodemailer.createTransport(dataTransport);
 const app = express()
-const PORT = entorno.port
+const PORT = entorno.port || 3000
 const fileStore = FileStore(session)
 
 //Middlewares
