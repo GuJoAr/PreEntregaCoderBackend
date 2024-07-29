@@ -91,18 +91,31 @@ const CartRepository = {
         }
     },
 
-    updateCart: async (cartId, products, total) => {
+    updateCart: async (cartId, userId, newProducts, total) => {
         try {
-            const cart = await Cart.findByIdAndUpdate(
-                cartId,
-                { products: products, total: total },
-                { new: true }
-            )
+            const cart = await Cart.findById(cartId)
+            if (!cart) {
+                throw new Error("No se encontró el carrito")
+            }
+            if (cart.user.toString() !== userId) {
+                throw new Error("No autorizado para actualizar este carrito")
+            }
+            newProducts.forEach(newProduct => {
+                const existingProduct = cart.products.find(p => p.product.toString() === newProduct.product)
+                if (existingProduct) {
+                    existingProduct.productQuantity += newProduct.productQuantity
+                    existingProduct.productTotal += newProduct.productTotal
+                } else {
+                    cart.products.push(newProduct)
+                }
+            })
+            cart.total = total
+            await cart.save()
             return cart
         } catch (error) {
             throw new Error("Error al actualizar el carrito: " + error.message)
         }
-    },
+    },    
 
     updateProductQuantityInCart: async (cartId, productId, quantity) => {
         try {
@@ -134,7 +147,6 @@ const CartRepository = {
         try {
             const cart = await Cart.findByIdAndUpdate(
                 cartId,
-                { products: [], total: 0 },
                 { new: true }
             )
             return cart

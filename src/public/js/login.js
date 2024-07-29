@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function () {
     const loginForm = document.getElementById('loginForm')
     if (loginForm) {
@@ -36,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log("userId: ", userId)
                 console.log("user rol: ", userRole)
                 if (userRole === 'admin') {
-                    window.location.href = `http://localhost:8080/api/sessions/dashboard/${userId}`
+                    window.location.href = `http://localhost:8080/api/sessions/${userId}`
                 }
                 else {
                     window.location.href = "http://localhost:8080/api/products"

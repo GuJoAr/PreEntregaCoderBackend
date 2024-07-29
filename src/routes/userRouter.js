@@ -1,6 +1,6 @@
 import express from "express" 
 import userController from "../dao/controllers/user.controller.js"
-import { authToken,isUser ,isAdmin, isUserOrPremium, isAll } from "../config/auth.js"
+import { authToken,isPremium ,isAdmin, isUserOrPremium, isAll } from "../config/auth.js"
 import { configureDocumentMulter, configureProfileMulter } from "../utils/utils.js"
 
 const userRouter = express.Router() 
@@ -14,6 +14,9 @@ const getPremium = documentUpload.fields([
 
 // Maneja el renderizado del login
 userRouter.get("/login", userController.getLogin) 
+
+// Maneja la solicitud de mostrar la lista de usuarios
+userRouter.get("/", authToken, isAdmin, userController.getUsers)
 
 // Maneja el renderizado del register
 userRouter.get("/register", userController.getRegister) 
@@ -33,6 +36,21 @@ userRouter.get("/resetPassword/:token", userController.getResetPassword)
 // Maneja el renderizado del change role
 userRouter.get("/premium/:uid", authToken, isUserOrPremium, userController.getChangeUserRole)
 
+// Maneja la solicitud para ver el formulario para editar el usuario
+userRouter.get("/updateUser/:uid", authToken, userController.getUpdateUser)
+
+// Maneja la solicitud para ver el formulario para cambiar la contraseña
+userRouter.get("/changePassword/:uid", authToken, userController.getChangePassword)
+
+// Maneja el renderizado del change role de usuario a user
+userRouter.get("/user/:uid", authToken, isPremium, userController.getChangeUserRole)
+
+// Maneja el renderizado de la subida de documentos
+userRouter.get("/:uid/uploadDocuments", authToken, isAll, userController.getUploadDocs)
+
+// Maneja la vista de los documentos del usuario
+userRouter.get("/:uid/documents", authToken, userController.getDocsByUser)
+
 // Maneja la solicitud para cerrar la sesion del usuario
 userRouter.get("/logout", authToken, userController.logOut)
 
@@ -48,6 +66,12 @@ userRouter.put("/changePassword/:uid", authToken, userController.changePassword)
 // Maneja la solicitud para cambiar el rol del usuario
 userRouter.put("/premium/:uid", authToken, isUserOrPremium, getPremium, userController.changeUserRole)
 
+// Maneja la solicitud para cambiar el rol del usuario a user
+userRouter.put("/user/:uid", authToken, isPremium, userController.changeUserRole)
+
+// Maneja la solicitud para cambiar los roles de los usuarios 
+userRouter.put("/changeRole/:uid", authToken, isAdmin, userController.adminChangeUserRole)
+
 // Maneja la solicitud de login de usuarios
 userRouter.post("/login", userController.login) 
 
@@ -62,6 +86,12 @@ userRouter.post("/resetPassword/:token", userController.resetPassword)
 
 // Maneja la solicitud para subir documentos
 userRouter.post("/:uid/documents", authToken, isAll, documentUpload.array("documents", 10), userController.uploadDocs)
+
+// Maneja la solicitud de eliminar los usuarios inactivos
+userRouter.delete("/", userController.deleteInactiveUser)
+
+// Maneja la solicitud de eliminar los usuarios por su id
+userRouter.delete("/:uid", authToken, isAdmin, userController.deleteUser)
 
 export default userRouter 
 

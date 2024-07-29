@@ -1,11 +1,22 @@
-import bcrypt from "bcrypt" 
-import { generateAuthToken } from "../../config/auth.js" 
-import passport from "passport" 
-import userRepository from "../Repositories/user.repository.js"
 import UserDTO from "../DTO/user.dto.js"
+import userRepository from "../Repositories/user.repository.js"
+import bcrypt from "bcrypt" 
+import passport from "passport" 
 import logger from "../../utils/logger.js" 
+import { generateAuthToken } from "../../config/auth.js" 
 
 const userService = {
+    getUsers: async (currentPage) => {
+        try {
+            const users = await userRepository.getUsers(currentPage)
+            logger.info(`Usuarios encontrados: ${JSON.stringify(users)}`)
+            return users
+        } catch (error) {
+            logger.error("Error al obtener la lista de los usuarios:", error)
+            res.status(500).json({ error: "Error interno del servidor" })
+        }
+    },
+
     getUserById: async (userId) => {
         try {
             logger.info(`Buscando usuario por su ID: ${userId}`)
@@ -16,6 +27,17 @@ const userService = {
             throw new Error("Error al obtener usuario por su ID: " + error.message)
         }
     }, 
+
+    findUser: async(userId) => {
+        try {
+            logger.info(`Buscando user ID: ${userId}`)
+            const user = await userRepository.findUser(userId)
+            return user
+        } catch (error) {
+            logger.error(`Error al buscar el user ID: ${userId} - ${error.message}`)
+            throw new Error("Error al obtener usuario por ID: " + error.message)
+        }
+    },
 
     getLogin: async () => {
         logger.info(`Logeado correctamete`)
@@ -191,7 +213,8 @@ const userService = {
         return "resetPassword"
     },
 
-    changeUserRole: async (userId, files) => {
+    
+    changePremiumRole: async (userId, files) => {
         try {
             const user = await userRepository.findUser(userId)
             if (!user) {
@@ -206,8 +229,31 @@ const userService = {
                 await userRepository.uploadDocs(userId, files.comprobanteCuenta)
                 user.role = "premium"
             }
-            else if(user.role === "premium") {
+            else if (user.role === "premium") {
                 user.role = "user"
+            }
+            await user.save()
+            return user
+        } catch (error) {
+            throw new Error("Error al cambiar el rol del usuario: " + error.message)
+        }
+    },
+
+    getChangePremiumRole: async () => {
+        return "changePremiumRole"
+    },
+
+    changeUserRole: async (userId) => {
+        try {
+            const user = await userRepository.findUser(userId)
+            if (!user) {
+                throw new Error("El usuario no existe")
+            }
+            if (user.role === "premium") {
+                user.role = "user"
+            }
+            else {
+                logger.warn("Acceso no autorizado")
             }
             await user.save()
             return user
@@ -232,6 +278,83 @@ const userService = {
         } catch (error) {
             logger.error(`Error al subir documentos para el usuario: ${userId} - ${error.message}`)
             throw new Error("Error al subir documentos: " + error.message)
+        }
+    },
+
+    getDocsByUser: async (userId) => {
+        try {
+            logger.info(`Buscando los documentos del usuario: ${userId}`)
+            const docs = await userRepository.getDocsByUser(userId)
+            logger.info(`Lista de documentos: ${docs}`)
+            return docs
+        } catch (error) {
+            logger.error(`Error al ver los documentos por usuario: ${error.message}`)
+            throw new Error("Error interno del servidor")
+        }
+    },
+
+    findInactiveUser: async (inactivityPeriod) => {
+        try {
+            logger.info("Buscando usuarios inactivos")
+            const user = await userRepository.findInactiveUser(inactivityPeriod)
+            if (user == null) {
+                logger.info("No se ha encontrado usuarios inactivos")
+            } else if(user.role === "admin") {
+                logger.info("No se puede eliminar el administrador")
+            } else {
+                logger.info(`Usuarios inactivos encontrados: ${user}`)
+            }
+            return user
+        } catch (error) {
+            logger.error(`Error al buscar el usuario por inactividad: ${error.message}`)
+            throw new Error("Error interno del servidor")
+        }
+    },
+
+    deleteInactiveUser: async (userId) => {
+        try {
+            logger.info(`Eliminando usuario por inactividad: ${userId}`)
+            const deleteInactiveUser = await userRepository.deleteInactiveUser(userId)
+            return deleteInactiveUser
+        } catch (error) {
+            logger.error(`Error al buscar el usuario por inactividad: ${error.message}`)
+            throw new Error("Error interno del servidor")
+        }
+    },
+
+    deleteUser: async (userId) => {
+        try {
+            const deleteUser = await userRepository.deleteUser(userId)
+            logger.info("Usuario eliminado con exito")
+            return deleteUser
+        } catch (error) {
+            logger.error(`Error al eliminar el usuario: ${error.message}`)
+            throw new Error("Error interno del servidor")
+        }
+    },
+
+    adminChangeUserRole: async (userId) => {
+        try {
+            const user = await userRepository.findUser(userId)
+            logger.info(`Cambiando rol de usuario ${userId}, con rol ${user.role}`)
+            if (!user) {
+                throw new Error("El usuario no existe")
+            }
+            if (user.role === "premium") {
+                user.role = "user"
+            } else if (user.role === "user") {
+                user.role = "premium"
+            } else if (user.role === "admin") {
+                logger.warn("No se puede cambiar el rol de admin")
+            } else {
+                logger.warn("Acceso no autorizado")
+            }
+            await user.save()
+            logger.info(`Cambio de rol de usuario exitoso: ${user.role}`)
+            return user
+        } catch (error) {
+            logger.error(`Error al cambiar el rol del usuario: ${userId}`)
+            throw new Error("Error interno del servidor")
         }
     },
 

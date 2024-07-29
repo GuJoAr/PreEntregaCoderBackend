@@ -5,13 +5,12 @@ const cartController = {
         const cartId = req.params.cid
         const userId = req.session.userId
         const user = req.session.user
-        const isAuthenticated = req.session.isAuthenticated
         const jwtToken = req.session.token
 
         try {
             const cart = await cartService.getCartById(cartId, userId)
             if (req.accepts("html")) {
-                return res.render("cart", { cid: cart._id, Cart: cart, user, isAuthenticated, jwtToken })
+                return res.render("cart", { cid: cart._id, Cart: cart, user, jwtToken })
             }
             return res.json(cart)
         } catch (error) {
@@ -38,7 +37,7 @@ const cartController = {
             const cart = await cartService.updateCart(cartId, userId, products)
             return res.json(cart)
         } catch (error) {
-            console.error("Error al actualizar el carrito:", error)
+            console.error("Error en actualizar el carrito:", error)
             return res.status(500).json({ error: "Error en la base de datos", details: error.message })
         }
     },
@@ -59,12 +58,11 @@ const cartController = {
         const cartId = req.params.cid
         const userId = req.session.userId
         const user = req.session.user
-        const isAuthenticated = req.session.isAuthenticated
         const jwtToken = req.session.token
         try {
             const cart = await cartService.getCartById(cartId, userId)
             const purchaseCartView = await cartService.getPurchaseCart()
-            res.render(purchaseCartView, { user, isAuthenticated, jwtToken, Cart: cart })
+            res.render(purchaseCartView, { user, jwtToken, Cart: cart })
         } catch (error) {
             console.error("Error al realizar la compra:", error)
             return res.status(500).json({ error: "Error al realizar la compra", details: error.message })

@@ -3,13 +3,12 @@ import messageService from "../services/message.service.js"
 const messageController = {
     getMessages: async (req, res) => {
         const user = req.session.user
-        const isAuthenticated = req.session.isAuthenticated
         const jwtToken = req.session.token
         const userRole = req.session.userRole
         try {
             const messages = await messageService.getMessages()
             if (req.accepts('html')) {
-                return res.render('chat', { messages, user, isAuthenticated, jwtToken, userRole })
+                return res.render('chat', { messages, user, jwtToken, userRole })
             }
             res.json(messages)
         } catch (err) {

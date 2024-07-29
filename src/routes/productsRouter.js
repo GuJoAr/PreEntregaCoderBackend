@@ -1,6 +1,6 @@
 import express from "express"
 import productController from "../dao/controllers/product.controller.js"
-import { authToken, isAdmin } from "../config/auth.js"
+import { authToken, isPremiumOrAdmin } from "../config/auth.js"
 
 const productRouter = express.Router()
 
@@ -14,15 +14,15 @@ productRouter.get("/:pid", productController.getProductDetail)
 productRouter.get("/category/:category", productController.getProductCategory)
 
 // Maneja la solicitud para renderizar el formulario para editar el producto
-productRouter.get("/updateProduct/:pid", authToken, isAdmin, productController.getUpdateProduct)
+productRouter.get("/updateProduct/:pid", authToken, isPremiumOrAdmin, productController.getUpdateProduct)
 
 // Manejar la solicitud para agregar un producto en tiempo real
-productRouter.post("/", authToken, isAdmin, productController.addProduct)
+productRouter.post("/", authToken, isPremiumOrAdmin, productController.addProduct)
 
 // Maneja la solicitud para actualizar el producto
-productRouter.put("/:pid", authToken, isAdmin, productController.updateProduct)
+productRouter.put("/:pid", authToken, isPremiumOrAdmin, productController.updateProduct)
 
 // Manejar la solicitud para la eliminación de un producto en tiempo real
-productRouter.delete('/:pid', authToken, isAdmin, productController.deleteProduct)
+productRouter.delete('/:pid', authToken, isPremiumOrAdmin, productController.deleteProduct)
 
 export default productRouter

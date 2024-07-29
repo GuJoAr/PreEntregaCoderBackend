@@ -80,7 +80,7 @@ export const cookieExtractor = (req) => {
 }
 
 export const generateAuthToken = (user) => {
-    const token = jwt.sign({ _id: user._id }, entorno.JWT_SECRET, { expiresIn: '1h' }) 
+    const token = jwt.sign({ _id: user._id, role: user.role }, entorno.JWT_SECRET, { expiresIn: '1h' }) 
     return token 
 } 
 

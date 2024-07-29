@@ -61,12 +61,12 @@ const cartService = {
                 logger.warn(`User no autorizado`)
                 throw new Error("Usted no esta autorizado")
             }
-            if(userRole == "premium" && userId == product.owner) {
+            if(userRole == "premium" && userId == product.user) {
                 logger.warn(`User es autor de este producto`)
                 throw new Error("Usted es el creador de este producto, no puede agregarlo al carrito")
             }
-            let cart = await cartRepository.findByUserId(userId)
-            const newCart = await cartRepository.addProductToCart(productId, userId, cart, product)
+            let cart = await CartRepository.findByUserId(userId)
+            const newCart = await CartRepository.addProductToCart(productId, userId, cart, product)
             logger.info(`Producto agregado con exito al carrito: ${JSON.stringify(newCart)}`)
             return newCart
         } catch (error) {
@@ -106,7 +106,7 @@ const cartService = {
     },
 
     purchaseCart: async (cartId, cartData) => {
-        const { country, state, city, street, postal_code, phone, card_bank, security_number, userId } = cartData
+        const { country, state, city, street, postal_code, phone, card_bank, security_number, expired_date, userId } = cartData
         try {
             const cart = await CartRepository.getCartById(cartId, userId)
             let totalPurchaseAmount = 0
@@ -140,7 +140,8 @@ const cartService = {
             }
             const paymentDTO = {
                 cardBank: card_bank,
-                securityNumber: security_number
+                securityNumber: security_number,
+                expiredDate: expired_date
             }
             const purchaseDTO = new PurchaseDTO({
                 user: userId,

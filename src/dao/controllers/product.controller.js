@@ -1,6 +1,8 @@
 import productService from "../services/product.service.js"
 import userService from "../services/user.service.js"
 import cartService from "../services/cart.service.js"
+import { entorno } from "../../config/config.js"
+import { transport } from "../../app.js"
 
 const productController = {
     getProducts: async (req, res) => {
@@ -8,14 +10,13 @@ const productController = {
         let currentPage = req.query.page || 1
         const userId = req.session.userId
         const user = req.session.user
-        const isAuthenticated = req.session.isAuthenticated
         const jwtToken = req.session.token
         const userRole = req.session.userRole
         try {
             const carts = await cartService.getCartByUser(userId)
             const response = await productService.getProducts({ category, brand, sort }, currentPage)
             if (req.accepts('html')) {
-                res.render('realTimeProducts', { response, Carts: carts, user, isAuthenticated, jwtToken, userRole })
+                res.render('realTimeProducts', { response, Carts: carts, user, jwtToken, userRole })
             } else {
                 res.json({ message: "Lista de productos:", response })
             }
@@ -28,13 +29,12 @@ const productController = {
     getProductDetail: async (req, res) => {
         const productId = req.params.pid
         const user = req.session.user
-        const isAuthenticated = req.session.isAuthenticated
         const jwtToken = req.session.token
         const userRole = req.session.userRole
         try {
             const productDetail = await productService.getProductDetail(productId)
             if (req.accepts('html')) {
-                return res.render('product', { Product: productDetail, user, isAuthenticated, jwtToken, userRole })
+                return res.render('product', { Product: productDetail, user, jwtToken, userRole })
             }
         } catch (err) {
             console.error("Error al ver los detalles:", err)
@@ -47,13 +47,12 @@ const productController = {
         const { brand, sort } = req.query
         let currentPage = req.query.page || 1
         const user = req.session.user
-        const isAuthenticated = req.session.isAuthenticated
         const jwtToken = req.session.token
         const userRole = req.session.userRole
         try {
             const response = await productService.getProductCategory(category, { brand, sort }, currentPage)
             if (req.accepts('html')) {
-                res.render('category', { response, user, isAuthenticated, jwtToken, userRole })
+                res.render('category', { response, user, jwtToken, userRole })
             } else {
                 res.json({ message: "Lista de productos por categoria:", response })
             }
@@ -79,9 +78,7 @@ const productController = {
 
     updateProduct: async (req, res) => {
         const productId = req.params.pid
-        const productUpdateData = req.body
-        const userId = req.session.userId
-        const userRole = req.session.userRole
+        const { productUpdateData, userId, userRole } = req.body
         try {
             const product = await productService.getProductDetail(productId);
             const user = await userService.getUserById(userId);
@@ -100,12 +97,11 @@ const productController = {
     getUpdateProduct: async (req, res) => {
         const productId = req.params.pid
         const user = req.session.user
-        const isAuthenticated = req.session.isAuthenticated
         const jwtToken = req.session.token
         try {
             const product = await productService.getProductDetail(productId)
             const updateProductView = await productService.getUpdateProduct()
-            res.render(updateProductView, { isAuthenticated, jwtToken, user, product })
+            res.render(updateProductView, { jwtToken, user, product })
         } catch (error) {
             console.error("Error al obtener la vista de editar el producto:", error)
             res.status(500).json({ error: "Error interno del servidor" })
@@ -114,16 +110,26 @@ const productController = {
 
     deleteProduct: async (req, res) => {
         const productId = req.params.pid
-        const userId = req.session.userId
-        const userRole = req.session.userRole
+        const { userId, userRole } = req.body
         try {
             const product = await productService.getProductDetail(productId)
             const user = await userService.getUserById(userId)
-            if (userRole === 'admin' || (userRole === 'premium' && user && user._id.toString() == product.userId._id.toString())) {
-                await productService.deleteProduct(productId)
-                return res.json({ message: "Producto eliminado!" })
+            if (userRole === 'admin') {
+                await productService.deleteProduct(productId);
+                return res.json({ message: "Producto eliminado!" });
+            }
+            else if(userRole === 'premium' && user && user._id.toString() == product.owner._id.toString()){
+                await productService.deleteProduct(productId);
+                const mailOptions = {
+                    to: user.email,
+                    from: entorno.EMAIL_USERNAME,
+                    subject: 'Eliminación de producto',
+                    text: `Se envia este mensaje para advertir que se ha eliminado un producto ${product.title}.`
+                };
+                await transport.sendMail(mailOptions);
+                return res.json({ message: "Producto eliminado!" });
             } else {
-                return res.status(403).json({ message: 'No tienes permiso para esta accion' })
+                return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
             }
         } catch (err) {
             console.error('Error en la base de datos:', err)

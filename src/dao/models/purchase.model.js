@@ -11,9 +11,9 @@ const purchaseSchema = new mongoose.Schema({
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Product'
             },
-            quantity: Number,
-            unitPrice: Number,
-            totalPrice: Number
+            quantity: { type: Number, min: 0 },
+            unitPrice: { type: Number, min: 0 },
+            totalPrice: { type: Number, min: 0 }
         }
     ],
     shipping: {
@@ -22,11 +22,12 @@ const purchaseSchema = new mongoose.Schema({
         city: String,
         street: String,
         postalCode: Number,
-        phone: Number
+        phone: { type: Number, min: 1000000000, max: 999999999999999 }
     },
     payment: {
-        cardBank: Number,
-        securityNumber: Number
+        cardBank: { type: Number, min: 1000000000000000, max: 9999999999999999 },
+        securityNumber: { type: Number, min: 100, max: 999 },
+        expiredDate: Date,
     },
     purchaseDate: {
         type: Date,

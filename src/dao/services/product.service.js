@@ -67,7 +67,7 @@ const productService = {
         }
     },
 
-    updateProduct: async (productId, req, productUpdateData, userId) => {
+    updateProduct: async (productId, req, updateData, userId, user, userRole, product) => {
         const { title, brand, description, price, stock, category } = productUpdateData
         try {
             logger.info(`Actualizando el producto ID: ${productId} with data: ${JSON.stringify(productUpdateData)}`)
@@ -76,18 +76,18 @@ const productService = {
                 logger.warn(`Producto no encontrado ID: ${productId}`)
                 throw new Error("El producto no existe")
             }
-            const imageName = req.file ? req.file.filename : existingProduct.imageName
-            const updateProductDTO = new ProductDTO(
-                title || existingProduct.title,
-                brand || existingProduct.brand,
-                description || existingProduct.description,
-                price !== undefined ? price : existingProduct.price,
-                stock !== undefined ? stock : existingProduct.stock,
-                category || existingProduct.category,
-                imageName,
-                userId || existingProduct.owner
-            )
-            const updatedProduct = await productRepository.updateProduct(productId, updateProductDTO)
+            if ((userRole === 'admin' || (userRole === 'premium' && user && user._id.toString() === product.owner._id.toString()))) {
+                logger.warn("Usted no está autorizado")
+                throw new Error("No tiene los permisos requeridos")
+            }
+            if (req.file) {
+                updateData.imageName = req.file.filename
+            }
+            if (updateData.price < 0 || updateData.stock < 0) {
+                logger.warn("El precio y/o stock deben de ser de valores positivos")
+                throw new Error (`Error al actualizar el producto ID: ${productId} - ${error.message}`)
+            }
+            const updatedProduct = await productRepository.updateProduct(productId, updateData)
             logger.info(`Producto actualizado exitosamente: ${JSON.stringify(updatedProduct)}`)
             return updatedProduct
         } catch (error) {
