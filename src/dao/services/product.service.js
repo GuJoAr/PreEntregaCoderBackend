@@ -1,5 +1,5 @@
-import productRepository from "../Repositories/product.repository.js"
-import userRepository from "../Repositories/user.repository.js"
+import productRepository from "../repositories/product.repository.js"
+import userRepository from "../repositories/user.repository.js"
 import ProductDTO from "../DTO/product.dto.js"
 import logger from "../../utils/logger.js"
 
