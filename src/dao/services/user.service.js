@@ -1,5 +1,5 @@
 import UserDTO from "../DTO/user.dto.js"
-import userRepository from "../Repositories/user.repository.js"
+import userRepository from "../repositories/user.repository.js"
 import bcrypt from "bcrypt" 
 import passport from "passport" 
 import logger from "../../utils/logger.js" 
