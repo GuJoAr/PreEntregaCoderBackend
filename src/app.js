@@ -36,7 +36,7 @@ const dataTransport = {
 }
 export const transport = nodemailer.createTransport(dataTransport)
 const app = express()
-const PORT = entorno.port
+const PORT = entorno.port||9090
 const fileStore = FileStore(session)
 
 //Middlewares
@@ -142,7 +142,7 @@ db.once("open", () => {
     logger.info("Conectado con MongoDB")
 })
 
-const server = app.listen(PORT,()=>logger.info("Servidor conectado al puerto: ", PORT))
+const server = app.listen(PORT,()=>logger.info(`Servidor conectado al puerto: ${PORT}`))
 const io = new Server(server)
 
 io.on('connection', socket => {
