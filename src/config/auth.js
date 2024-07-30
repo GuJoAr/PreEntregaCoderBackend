@@ -2,7 +2,7 @@ import passport from "passport"
 import { Strategy as LocalStrategy } from "passport-local" 
 import GitHubStrategy from "passport-github2" 
 import jwt from "jsonwebtoken" 
-import User from "../dao/Models/user.model.js"
+import User from "../dao/models/user.model.js"
 import bcrypt from "bcrypt" 
 import { entorno } from "./config.js"
 
