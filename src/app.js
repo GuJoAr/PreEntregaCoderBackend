@@ -55,6 +55,32 @@ app.use(compression({
 }))
 // Middleware de errores
 app.use(errorHandler)
+
+app.use(session({
+    store: MongoStore.create({
+        mongoUrl: entorno.MONGO_URL,
+        ttl: 3600,
+    }),
+    secret: "secret_key",
+    resave: false,
+    saveUninitialized: false,
+}))
+
+mongoose.connect(entorno.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+
+const db = mongoose.connection
+
+db.on("error", (error) => {
+    logger.error("No se pudo conectar a la DB:", error)
+})
+
+db.once("open", () => {
+    logger.info("Conectado con MongoDB")
+})
+
 // Middleware de Passport 
 app.use(passport.initialize())
 app.use(passport.session())
@@ -103,16 +129,6 @@ app.get("/loggerTest", (req, res) => {
     }
 })
 
-app.use(session({
-    store: MongoStore.create({
-        mongoUrl: entorno.MONGO_URL,
-        ttl: 3600,
-    }),
-    secret: "secret_key",
-    resave: false,
-    saveUninitialized: false,
-}))
-
 const swaggerOptions = {
     definition: {
         openapi: "3.0.1",
@@ -126,21 +142,6 @@ const swaggerOptions = {
 
 const specs = swaggerJSDoc(swaggerOptions)
 app.use("/apidocs", swaggerUiExpress.serve, swaggerUiExpress.setup(specs))
-
-mongoose.connect(entorno.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-
-const db = mongoose.connection
-
-db.on("error", (error) => {
-    logger.error("No se pudo conectar a la DB:", error)
-})
-
-db.once("open", () => {
-    logger.info("Conectado con MongoDB")
-})
 
 const server = app.listen(PORT,()=>logger.info(`Servidor conectado al puerto: ${PORT}`))
 const io = new Server(server)
