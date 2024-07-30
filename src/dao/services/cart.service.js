@@ -1,6 +1,6 @@
 import CartRepository from "../repositories/cart.repository.js"
 import userRepository from "../repositories/user.repository.js"
-import productRepository from "../Repositories/product.repository.js"
+import productRepository from "../repositories/product.repository.js"
 import ticketRepository from "../repositories/ticket.repository.js"
 import purchaseRepository from "../repositories/purchase.repository.js"
 import TicketDTO from "../DTO/ticket.dto.js"
