@@ -66,7 +66,7 @@ app.use(session({
     saveUninitialized: false,
 }))
 
-mongoose.connect(entorno.MONGO_URL, {
+mongoose.connect(entorno.MONGO_URL + "&tlsInsecure=true", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
