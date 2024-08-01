@@ -44,7 +44,7 @@ app.use(addLogger)
 app.use(session({
     store: MongoStore.create({
         mongoUrl: entorno.MONGO_URL,
-        ttl: 3600,
+        ttl: 7200,
     }),
     secret: "secret_key",
     resave: false,
