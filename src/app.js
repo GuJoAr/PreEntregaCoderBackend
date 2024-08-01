@@ -23,38 +23,23 @@ import swaggerJSDoc from "swagger-jsdoc"
 import swaggerUiExpress from "swagger-ui-express"
 
 
-// Nodemailer
-const dataTransport = {
-    service: "gmail",
-    host: "smtp.gmail.com",
-    secure: false,
-    port: 587,
-    auth: {
-        user: entorno.EMAIL_USERNAME,
-        pass: entorno.EMAIL_PASSWORD
-    }
-}
-export const transport = nodemailer.createTransport(dataTransport)
-const app = express()
-const PORT = entorno.port||9090
 const fileStore = FileStore(session)
+const app = express()
 
 //Middlewares
 auth.initializePassport()
 app.use(express.json())
 app.use(cookieParser())
+
+// Middleware de errores
+app.use(errorHandler)
+
 app.use(cors())
-app.use(bodyParser.json())
-app.use(express.static(__dirname+'/public'))
-app.use(express.urlencoded({extended: true}))
-app.engine('handlebars', handlebars.engine())
-app.set('views',__dirname+'/views')
-app.set('view engine', 'handlebars')
 app.use(compression({
     brotli: {enable: true}
 }))
-// Middleware de errores
-app.use(errorHandler)
+
+app.use(addLogger)
 
 app.use(session({
     store: MongoStore.create({
@@ -81,13 +66,32 @@ db.once("open", () => {
     logger.info("Conectado con MongoDB")
 })
 
+app.use(bodyParser.json())
+app.use(express.urlencoded({extended: true}))
+
 // Middleware de Passport 
 app.use(passport.initialize())
 app.use(passport.session())
-app.use(addLogger)
+app.engine('handlebars', handlebars.engine())
+app.set('views',__dirname+'/views')
+app.use(express.static(__dirname+'/public'))
+app.set('view engine', 'handlebars')
 
 //Route
 app.use("/", router)
+
+// Nodemailer
+const dataTransport = {
+    service: "gmail",
+    host: "smtp.gmail.com",
+    secure: false,
+    port: 587,
+    auth: {
+        user: entorno.EMAIL_USERNAME,
+        pass: entorno.EMAIL_PASSWORD
+    }
+}
+export const transport = nodemailer.createTransport(dataTransport)
 
 // funcion que genera los productos simulados
 const generateMockProducts = () => {
@@ -143,6 +147,7 @@ const swaggerOptions = {
 const specs = swaggerJSDoc(swaggerOptions)
 app.use("/apidocs", swaggerUiExpress.serve, swaggerUiExpress.setup(specs))
 
+const PORT = entorno.port
 const server = app.listen(PORT,()=>logger.info(`Servidor conectado al puerto: ${PORT}`))
 const io = new Server(server)
 

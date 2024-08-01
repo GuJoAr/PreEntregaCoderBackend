@@ -8,7 +8,7 @@ const __dirname = dirname(__filename)
 dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
 export const entorno= {
-    port: process.env.PORT,
+    port: process.env.PORT || 8080,
     MONGO_URL : process.env.MONGO_URL,
     JWT_SECRET : process.env.JWT_SECRET,
     CLIENT_ID : process.env.CLIENT_ID,
